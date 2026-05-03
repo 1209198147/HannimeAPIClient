@@ -5,6 +5,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeApiException;
+import com.shikou.exception.HanimeException;
+import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.Comment;
 import okhttp3.*;
 
@@ -35,7 +38,7 @@ public class HanimeCommentService {
      * @param code 影片代码
      * @return 评论列表
      */
-    public List<Comment> getComments(String type, String code) throws IOException {
+    public List<Comment> getComments(String type, String code) throws HanimeException {
         HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadComment").newBuilder()
                 .addQueryParameter("type", type)
                 .addQueryParameter("id", code)
@@ -49,17 +52,19 @@ public class HanimeCommentService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取评论失败: " + response.code());
+                throw new HanimeApiException("获取评论失败: " + response.code());
             }
             String json = response.body().string();
             return parseCommentsFromJson(json);
+        } catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
     /**
      * 获取影片评论
      */
-    public List<Comment> getVideoComments(String videoCode) throws IOException {
+    public List<Comment> getVideoComments(String videoCode) throws HanimeException {
         return getComments("video", videoCode);
     }
 

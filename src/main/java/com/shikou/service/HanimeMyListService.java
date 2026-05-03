@@ -1,6 +1,9 @@
 package com.shikou.service;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeApiException;
+import com.shikou.exception.HanimeException;
+import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.VideoInfo;
 import com.shikou.model.PlaylistItem;
 import com.shikou.parser.HtmlParser;
@@ -29,7 +32,7 @@ public class HanimeMyListService {
      * @param page 页码，从1开始
      * @param listType 列表类型: "WL"(稍后观看), "LL"(喜欢的影片), "SL"(订阅), 或自定义列表代码
      */
-    public List<VideoInfo> getPlaylist(int page, String listType) throws IOException {
+    public List<VideoInfo> getPlaylist(int page, String listType) throws HanimeException {
         HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "playlist").newBuilder()
                 .addQueryParameter("page", String.valueOf(page))
                 .addQueryParameter("list", listType)
@@ -43,29 +46,31 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取播放列表失败: " + response.code());
+                throw new HanimeApiException("获取播放列表失败: " + response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             return HtmlParser.parseVideoCards(doc);
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
-    public List<VideoInfo> getWatchLater(int page) throws IOException {
+    public List<VideoInfo> getWatchLater(int page) throws HanimeException {
         return getPlaylist(page, "WL");
     }
 
-    public List<VideoInfo> getLikedVideos(int page) throws IOException {
+    public List<VideoInfo> getLikedVideos(int page) throws HanimeException {
         return getPlaylist(page, "LL");
     }
 
-    public List<VideoInfo> getSubscriptions(int page) throws IOException {
+    public List<VideoInfo> getSubscriptions(int page) throws HanimeException {
         return getPlaylist(page, "SL");
     }
 
     // ======================== 获取所有播放列表 ========================
 
-    public List<PlaylistItem> getAllPlaylists() throws IOException {
+    public List<PlaylistItem> getAllPlaylists() throws HanimeException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "playlists")
                 .addHeader("User-Agent", config.getUserAgent())
@@ -74,17 +79,19 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取播放列表失败: " + response.code());
+                throw new HanimeApiException("获取播放列表失败: " + response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             return HtmlParser.parsePlaylistItems(doc);
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
     // ======================== 删除列表项 ========================
 
-    public boolean deletePlaylistItem(String csrfToken, String playlistId, String videoId) throws IOException {
+    public boolean deletePlaylistItem(String csrfToken, String playlistId, String videoId) throws HanimeException {
         FormBody formBody = new FormBody.Builder()
                 .add("playlist_id", playlistId)
                 .add("video_id", videoId)
@@ -101,12 +108,14 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
     // ======================== 收藏/取消收藏 ========================
 
-    public boolean toggleFavorite(String csrfToken, String videoCode, boolean add, String userId) throws IOException {
+    public boolean toggleFavorite(String csrfToken, String videoCode, boolean add, String userId) throws HanimeException {
         FormBody.Builder formBuilder = new FormBody.Builder()
                 .add("like-foreign-id", videoCode)
                 .add("like-status", add ? "" : "1")
@@ -127,20 +136,22 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
-    public boolean addFavorite(String csrfToken, String videoCode, String userId) throws IOException {
+    public boolean addFavorite(String csrfToken, String videoCode, String userId) throws HanimeException {
         return toggleFavorite(csrfToken, videoCode, true, userId);
     }
 
-    public boolean removeFavorite(String csrfToken, String videoCode, String userId) throws IOException {
+    public boolean removeFavorite(String csrfToken, String videoCode, String userId) throws HanimeException {
         return toggleFavorite(csrfToken, videoCode, false, userId);
     }
 
     // ======================== 创建播放列表 ========================
 
-    public boolean createPlaylist(String csrfToken, String videoId, String title, String description) throws IOException {
+    public boolean createPlaylist(String csrfToken, String videoId, String title, String description) throws HanimeException {
         FormBody formBody = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("create-playlist-video-id", videoId)
@@ -158,20 +169,22 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
     // ======================== 添加到播放列表 ========================
 
-    public boolean saveToPlaylist(String csrfToken, String listCode, String videoId, String userId) throws IOException {
+    public boolean saveToPlaylist(String csrfToken, String listCode, String videoId, String userId) throws HanimeException {
         return saveToPlaylist(csrfToken, listCode, videoId, true, userId);
     }
 
-    public boolean removeFromPlaylist(String csrfToken, String listCode, String videoId, String userId) throws IOException {
+    public boolean removeFromPlaylist(String csrfToken, String listCode, String videoId, String userId) throws HanimeException {
         return saveToPlaylist(csrfToken, listCode, videoId, false, userId);
     }
 
-    private boolean saveToPlaylist(String csrfToken, String listCode, String videoId, boolean add, String userId) throws IOException {
+    private boolean saveToPlaylist(String csrfToken, String listCode, String videoId, boolean add, String userId) throws HanimeException {
         FormBody.Builder formBuilder = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("input_id", listCode)
@@ -192,13 +205,15 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
     // ======================== 修改播放列表 ========================
 
     public boolean modifyPlaylist(String csrfToken, String listCode, String title,
-                                   String description, boolean delete) throws IOException {
+                                   String description, boolean delete) throws HanimeException {
         FormBody.Builder formBuilder = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("_method", "PUT")
@@ -219,10 +234,12 @@ public class HanimeMyListService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
-    public boolean deletePlaylist(String csrfToken, String listCode) throws IOException {
+    public boolean deletePlaylist(String csrfToken, String listCode) throws HanimeException {
         return modifyPlaylist(csrfToken, listCode, "", "", true);
     }
 }

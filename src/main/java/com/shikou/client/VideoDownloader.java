@@ -1,6 +1,7 @@
 package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.*;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -39,14 +40,14 @@ public class VideoDownloader {
     /**
      * 下载文件（无进度回调）
      */
-    public void download(String url, File outputFile) throws IOException {
+    public void download(String url, File outputFile) throws HanimeException, IOException {
         download(url, outputFile, null);
     }
 
     /**
      * 下载文件（带进度回调）
      */
-    public void download(String url, File outputFile, ProgressListener listener) throws IOException {
+    public void download(String url, File outputFile, ProgressListener listener) throws HanimeException, IOException {
         long contentLength = getContentLength(url);
         if (contentLength <= 0) {
             simpleDownload(url, outputFile, listener);
@@ -87,7 +88,7 @@ public class VideoDownloader {
 
                 try (Response response = client.newCall(request).execute()) {
                     if (response.body() == null) {
-                        throw new IOException("响应体为空");
+                        throw new HanimeApiException("视频不存在");
                     }
 
                     try (InputStream inputStream = response.body().byteStream()) {
@@ -108,7 +109,7 @@ public class VideoDownloader {
         }
     }
 
-    private void simpleDownload(String url, File outputFile, ProgressListener listener) throws IOException {
+    private void simpleDownload(String url, File outputFile, ProgressListener listener) throws HanimeException, IOException {
         File parentFile = outputFile.getParentFile();
         if (parentFile != null && !parentFile.exists()) {
             parentFile.mkdirs();
@@ -122,7 +123,7 @@ public class VideoDownloader {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("下载失败: " + response.code());
+                throw new HanimeApiException("视频不存在");
             }
 
             long contentLength = response.body().contentLength();

@@ -1,12 +1,13 @@
 package com.shikou.config;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 
 /**
  * Hanime客户端全局配置
  */
-@Getter
+@Data
 @Builder
 public class HanimeConfig {
 

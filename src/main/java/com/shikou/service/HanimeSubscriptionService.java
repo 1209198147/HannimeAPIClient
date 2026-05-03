@@ -1,6 +1,8 @@
 package com.shikou.service;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeException;
+import com.shikou.exception.HanimeNetworkException;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -21,18 +23,18 @@ public class HanimeSubscriptionService {
     /**
      * 订阅作者
      */
-    public boolean subscribe(String csrfToken, String userId, String artistId) throws IOException {
+    public boolean subscribe(String csrfToken, String userId, String artistId) throws HanimeException {
         return toggleSubscription(csrfToken, userId, artistId, true);
     }
 
     /**
      * 取消订阅作者
      */
-    public boolean unsubscribe(String csrfToken, String userId, String artistId) throws IOException {
+    public boolean unsubscribe(String csrfToken, String userId, String artistId) throws HanimeException {
         return toggleSubscription(csrfToken, userId, artistId, false);
     }
 
-    private boolean toggleSubscription(String csrfToken, String userId, String artistId, boolean subscribe) throws IOException {
+    private boolean toggleSubscription(String csrfToken, String userId, String artistId, boolean subscribe) throws HanimeException {
         FormBody formBody = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("subscribe-user-id", userId)
@@ -50,6 +52,8 @@ public class HanimeSubscriptionService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        }catch (IOException e){
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 }

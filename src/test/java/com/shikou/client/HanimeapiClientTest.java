@@ -1,6 +1,7 @@
 package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeException;
 import com.shikou.model.HanimeVideo;
 import com.shikou.model.HomePage;
 import com.shikou.model.SearchParams;
@@ -33,7 +34,7 @@ public class HanimeapiClientTest {
 
 
     @Test
-    public void testHomePage() throws IOException {
+    public void testHomePage() throws HanimeException {
         System.out.println("--- 获取首页 ---");
         HomePage homePage = client.getHomePage();
         if (homePage.getSections() != null) {
@@ -48,7 +49,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testSearch() throws IOException {
+    public void testSearch() throws HanimeException {
         System.out.println("--- 搜索影片 ---");
         SearchParams searchParams = SearchParams.builder()
                 .query("女仆")
@@ -64,7 +65,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testVideoDetail() throws IOException {
+    public void testVideoDetail() throws HanimeException {
         System.out.println("--- 获取影片详情 ---");
         String videoCode = "405939";
         HanimeVideo video = client.getVideoDetail(videoCode);
@@ -84,7 +85,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testDownload() throws IOException {
+    public void testDownload() throws Exception {
         System.out.println("--- 下载视频 ---");
         String videoCode = "405939";
         File outputFile = new File(System.getProperty("user.home") + "/Downloads", videoCode + ".mp4");

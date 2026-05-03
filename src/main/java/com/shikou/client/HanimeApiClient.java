@@ -1,6 +1,8 @@
 package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeApiException;
+import com.shikou.exception.HanimeException;
 import com.shikou.model.*;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
@@ -122,51 +124,51 @@ public class HanimeApiClient {
 
     // ======================== 便捷方法 ========================
 
-    public HomePage getHomePage() throws IOException {
+    public HomePage getHomePage() throws HanimeException {
         return baseService.getHomePage();
     }
 
-    public List<VideoInfo> search(String query) throws IOException {
+    public List<VideoInfo> search(String query) throws HanimeException {
         return baseService.search(query);
     }
 
-    public List<VideoInfo> search(SearchParams params) throws IOException {
+    public List<VideoInfo> search(SearchParams params) throws HanimeException {
         return baseService.search(params);
     }
 
-    public HanimeVideo getVideoDetail(String videoCode) throws IOException {
+    public HanimeVideo getVideoDetail(String videoCode) throws HanimeException {
         return baseService.getVideoDetail(videoCode);
     }
 
-    public PreviewPage getPreviews(String date) throws IOException {
+    public PreviewPage getPreviews(String date) throws HanimeException {
         return baseService.getPreviews(date);
     }
 
-    public boolean login(String email, String password) throws IOException {
+    public boolean login(String email, String password) throws HanimeException {
         String csrfToken = baseService.login(email, password);
         this.csrfToken = csrfToken;
         return csrfToken != null && !csrfToken.isEmpty();
     }
 
-    public boolean isLoggedIn() throws IOException {
+    public boolean isLoggedIn() throws HanimeException {
         return baseService.verifyLogin();
     }
 
     // ======================== 视频下载 ========================
 
-    public void download(String videoCode, File outputFile) throws IOException {
+    public void download(String videoCode, File outputFile) throws HanimeException, IOException {
         HanimeVideo video = baseService.getVideoDetail(videoCode);
         if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
-            throw new IOException("未找到视频URL");
+            throw new HanimeApiException("未找到视频URL");
         }
         VideoQuality quality = selectBestQuality(video.getVideoUrls());
         videoDownloader.download(quality.getUrl(), outputFile);
     }
 
-    public void download(String videoCode, String quality, File outputFile) throws IOException {
+    public void download(String videoCode, String quality, File outputFile) throws HanimeException, IOException {
         HanimeVideo video = baseService.getVideoDetail(videoCode);
         if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
-            throw new IOException("未找到视频URL");
+            throw new HanimeApiException("未找到视频URL");
         }
         VideoQuality vq = video.getVideoUrls().get(quality);
         if (vq == null) {
@@ -176,10 +178,10 @@ public class HanimeApiClient {
     }
 
     public void download(String videoCode, String quality, File outputFile,
-                          VideoDownloader.ProgressListener listener) throws IOException {
+                          VideoDownloader.ProgressListener listener) throws HanimeException, IOException {
         HanimeVideo video = baseService.getVideoDetail(videoCode);
         if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
-            throw new IOException("未找到视频URL");
+            throw new HanimeApiException("未找到视频URL");
         }
         VideoQuality vq = video.getVideoUrls().get(quality);
         if (vq == null) {

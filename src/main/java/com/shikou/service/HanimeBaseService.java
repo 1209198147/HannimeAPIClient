@@ -1,6 +1,7 @@
 package com.shikou.service;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.*;
 import com.shikou.model.*;
 import com.shikou.parser.HtmlParser;
 import okhttp3.*;
@@ -28,7 +29,7 @@ public class HanimeBaseService {
      * 获取首页
      * @return HomePage 首页数据
      */
-    public HomePage getHomePage() throws IOException {
+    public HomePage getHomePage() throws HanimeException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl())
                 .addHeader("User-Agent", config.getUserAgent())
@@ -36,12 +37,14 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取首页失败: " + response.code());
+                throw new HanimeApiException("获取首页失败", response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             HomePage homePage = HtmlParser.parseHomePage(doc);
             return homePage;
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -52,7 +55,7 @@ public class HanimeBaseService {
      * @param params 搜索参数
      * @return 影片列表
      */
-    public List<VideoInfo> search(SearchParams params) throws IOException {
+    public List<VideoInfo> search(SearchParams params) throws HanimeException {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
 
         if (params.getPage() > 0) {
@@ -97,11 +100,13 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("搜索失败: " + response.code());
+                throw new HanimeApiException("搜索失败", response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             return HtmlParser.parseSearchResults(doc);
+        } catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -110,7 +115,7 @@ public class HanimeBaseService {
      * @param query 搜索关键词
      * @return 影片列表
      */
-    public List<VideoInfo> search(String query) throws IOException {
+    public List<VideoInfo> search(String query) throws HanimeException {
         return search(new SearchParams(query));
     }
 
@@ -121,7 +126,7 @@ public class HanimeBaseService {
      * @param videoCode 影片代码
      * @return HanimeVideo 影片详情
      */
-    public HanimeVideo getVideoDetail(String videoCode) throws IOException {
+    public HanimeVideo getVideoDetail(String videoCode) throws HanimeException {
         HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "watch").newBuilder()
                 .addQueryParameter("v", videoCode)
                 .build();
@@ -134,12 +139,14 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取影片详情失败: " + response.code());
+                throw new HanimeApiException("获取影片详情失败", response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             HanimeVideo video = HtmlParser.parseVideoDetail(doc);
             return video;
+        } catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -150,7 +157,7 @@ public class HanimeBaseService {
      * @param date 日期，格式如 202206、202012
      * @return PreviewPage 预览页面数据
      */
-    public PreviewPage getPreviews(String date) throws IOException {
+    public PreviewPage getPreviews(String date) throws HanimeException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "previews/" + date)
                 .addHeader("User-Agent", config.getUserAgent())
@@ -158,11 +165,13 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取预览页面失败: " + response.code());
+                throw new HanimeApiException("获取预览页面失败", response.code());
             }
             String html = response.body().string();
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             return HtmlParser.parsePreviewPage(doc);
+        }catch (IOException e){
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -172,7 +181,7 @@ public class HanimeBaseService {
      * 获取登录页面（提取CSRF Token）
      * @return CSRF Token
      */
-    public String getCsrfToken() throws IOException {
+    public String getCsrfToken() throws HanimeException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
                 .addHeader("User-Agent", config.getUserAgent())
@@ -180,11 +189,13 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             if (response.body() == null) {
-                throw new IOException("获取登录页面失败");
+                throw new HanimeApiException("获取登录页面失败");
             }
             String html = response.body().string();
             var doc = Jsoup.parse(html, config.getBaseUrl());
             return null;
+        } catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -194,11 +205,11 @@ public class HanimeBaseService {
      * @param password 密码
      * @return 是否登录成功
      */
-    public String login(String email, String password) throws IOException {
+    public String login(String email, String password) throws HanimeException {
         String csrfToken = getCsrfToken();
 
         if (csrfToken == null || csrfToken.isEmpty()) {
-            throw new IOException("无法获取CSRF Token");
+            throw new HanimeAuthenticationException("无法获取CSRF Token");
         }
 
         FormBody formBody = new FormBody.Builder()
@@ -221,6 +232,8 @@ public class HanimeBaseService {
                 return csrfToken;
             }
             return null;
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 
@@ -228,7 +241,7 @@ public class HanimeBaseService {
      * 验证是否已登录
      * @return 是否已登录
      */
-    public boolean verifyLogin() throws IOException {
+    public boolean verifyLogin() throws HanimeException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
                 .addHeader("User-Agent", config.getUserAgent())
@@ -236,6 +249,8 @@ public class HanimeBaseService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.code() == 404;
+        }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
         }
     }
 }
