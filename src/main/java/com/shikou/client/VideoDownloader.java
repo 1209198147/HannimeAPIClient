@@ -45,67 +45,111 @@ public class VideoDownloader {
     }
 
     /**
-     * 下载文件（带进度回调）
+     * 下载文件（支持断点续传，边写边增长）
+     * @param url         下载URL
+     * @param outputFile  本地输出文件
+     * @param listener    进度监听器（可为null）
+     * @throws HanimeException 业务异常
+     * @throws IOException     网络或IO异常
      */
-    public void download(String url, File outputFile, ProgressListener listener) throws HanimeException, IOException {
+    public void download(String url, File outputFile, ProgressListener listener)
+            throws HanimeException, IOException {
+
+        // 1. 获取服务器文件总大小
         long contentLength = getContentLength(url);
         if (contentLength <= 0) {
+            // 服务器未返回Content-Length，降级为简单下载（不支持断点续传）
             simpleDownload(url, outputFile, listener);
             return;
         }
 
+        // 2. 检查本地已下载字节数（断点续传）
         long downloadedBytes = 0;
-        if (outputFile.exists()) {
+        boolean fileExists = outputFile.exists();
+
+        if (fileExists) {
             downloadedBytes = outputFile.length();
             if (downloadedBytes >= contentLength) {
+                // 文件已完整，直接回调100%后返回
                 if (listener != null) {
                     listener.onProgress(contentLength, contentLength);
                 }
                 return;
             }
+            // 处理服务器文件变小的情况（例如资源被替换为更小的文件）
+            if (downloadedBytes > contentLength) {
+                // 删除旧文件，从头下载
+                outputFile.delete();
+                downloadedBytes = 0;
+                fileExists = false;
+            }
         }
 
-        File parentFile = outputFile.getParentFile();
-        if (parentFile != null && !parentFile.exists()) {
-            parentFile.mkdirs();
+        // 3. 创建父目录
+        File parentDir = outputFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
         }
 
-        RandomAccessFile randomAccessFile = new RandomAccessFile(outputFile, "rw");
-        randomAccessFile.setLength(contentLength);
-        randomAccessFile.seek(downloadedBytes);
+        // 4. 构建 Range 请求（从断点处开始）
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("Range", "bytes=" + downloadedBytes + "-")
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .build();
 
-        try {
-            while (downloadedBytes < contentLength) {
-                long rangeStart = downloadedBytes;
-                long rangeEnd = Math.min(downloadedBytes + HanimeConfig.DOWNLOAD_CHUNK_SIZE - 1, contentLength - 1);
+        // 5. 执行请求并处理响应
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Download failed, response code: " + response.code());
+            }
 
-                Request request = new Request.Builder()
-                        .url(url)
-                        .addHeader("User-Agent", config.getUserAgent())
-                        .addHeader("Referer", config.getBaseUrl())
-                        .addHeader("Range", "bytes=" + rangeStart + "-" + rangeEnd)
-                        .build();
+            int statusCode = response.code();
+            if (statusCode == 200) {
+                // 服务器不支持 Range 请求（忽略了我发的 Range 头），降级为完全覆盖下载
+                // 注意：需要关闭可能已存在的文件，重新从头下载
+                if (fileExists) {
+                    outputFile.delete();
+                }
+                simpleDownload(url, outputFile, listener);
+                return;
+            } else if (statusCode != 206) {
+                throw new IOException("Unsupported response code for range request: " + statusCode);
+            }
 
-                try (Response response = client.newCall(request).execute()) {
-                    if (response.body() == null) {
-                        throw new HanimeApiException("视频不存在");
-                    }
+            // 6. 206 Partial Content - 开始写入数据
+            try (RandomAccessFile raf = new RandomAccessFile(outputFile, "rw");
+                 InputStream is = response.body().byteStream()) {
 
-                    try (InputStream inputStream = response.body().byteStream()) {
-                        byte[] buffer = new byte[HanimeConfig.DOWNLOAD_BUFFER_SIZE];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            randomAccessFile.write(buffer, 0, bytesRead);
-                            downloadedBytes += bytesRead;
-                            if (listener != null) {
-                                listener.onProgress(downloadedBytes, contentLength);
-                            }
+                // 移动到断点位置（如果文件不存在则位置为0）
+                raf.seek(downloadedBytes);
+                // 不需要 setLength，文件会在写入时自动增长
+
+                byte[] buffer = new byte[HanimeConfig.DOWNLOAD_BUFFER_SIZE];
+                int bytesRead;
+                long lastCallbackBytes = downloadedBytes;
+                final long PROGRESS_CALLBACK_THRESHOLD = 1024 * 1024; // 每1MB回调一次
+
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    raf.write(buffer, 0, bytesRead);
+                    downloadedBytes += bytesRead;
+
+                    // 进度回调（限流：每1MB或文件最后一块）
+                    if (listener != null) {
+                        if ((downloadedBytes - lastCallbackBytes) >= PROGRESS_CALLBACK_THRESHOLD
+                                || downloadedBytes == contentLength) {
+                            listener.onProgress(downloadedBytes, contentLength);
+                            lastCallbackBytes = downloadedBytes;
                         }
                     }
                 }
+
+                // 确保最终100%回调（如果最后一块不足阈值）
+                if (listener != null && downloadedBytes != lastCallbackBytes) {
+                    listener.onProgress(downloadedBytes, contentLength);
+                }
             }
-        } finally {
-            randomAccessFile.close();
         }
     }
 
