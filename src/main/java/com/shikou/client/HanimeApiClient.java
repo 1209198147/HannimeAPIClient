@@ -10,8 +10,10 @@ import okhttp3.OkHttpClient;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Hanime API 客户端 - 统一入口
@@ -124,6 +126,10 @@ public class HanimeApiClient {
 
     // ======================== 便捷方法 ========================
 
+    public DownloadInfo getDownloadInfo(String videoCode) throws HanimeException {
+        return baseService.getDownloadInfo(videoCode);
+    }
+
     public HomePage getHomePage() throws HanimeException {
         return baseService.getHomePage();
     }
@@ -157,48 +163,65 @@ public class HanimeApiClient {
     // ======================== 视频下载 ========================
 
     public void download(String videoCode, File outputFile) throws HanimeException, IOException {
-        HanimeVideo video = baseService.getVideoDetail(videoCode);
-        if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
+        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
+        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
             throw new HanimeApiException("未找到视频URL");
         }
-        VideoQuality quality = selectBestQuality(video.getVideoUrls());
+        VideoQuality quality = selectBestQuality(downloadInfo.getDownloadItems());
         videoDownloader.download(quality.getUrl(), outputFile);
     }
 
     public void download(String videoCode, String quality, File outputFile) throws HanimeException, IOException {
-        HanimeVideo video = baseService.getVideoDetail(videoCode);
-        if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
+        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
+        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
             throw new HanimeApiException("未找到视频URL");
         }
-        VideoQuality vq = video.getVideoUrls().get(quality);
-        if (vq == null) {
-            vq = selectBestQuality(video.getVideoUrls());
-        }
+        VideoQuality vq = selectBestQuality(downloadInfo.getDownloadItems(), quality);
         videoDownloader.download(vq.getUrl(), outputFile);
     }
 
     public void download(String videoCode, String quality, File outputFile,
                           VideoDownloader.ProgressListener listener) throws HanimeException, IOException {
-        HanimeVideo video = baseService.getVideoDetail(videoCode);
-        if (video.getVideoUrls() == null || video.getVideoUrls().isEmpty()) {
+        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
+        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
             throw new HanimeApiException("未找到视频URL");
         }
-        VideoQuality vq = video.getVideoUrls().get(quality);
-        if (vq == null) {
-            vq = selectBestQuality(video.getVideoUrls());
-        }
+        VideoQuality vq = selectBestQuality(downloadInfo.getDownloadItems(), quality);
         videoDownloader.download(vq.getUrl(), outputFile, listener);
     }
 
-    private VideoQuality selectBestQuality(java.util.Map<String, VideoQuality> videoUrls) {
+    /**
+     * 选择最佳质量的视频
+     * @param downloadItems
+     * @return
+     */
+    private VideoQuality selectBestQuality(List<DownloadItem> downloadItems) {
+        return selectBestQuality(downloadItems, null);
+    }
+
+    /**
+     * 选择最佳质量的视频
+     * @param downloadItems
+     * @param quality 如果存在则返回这个分辨率，如果没有则返回最好的一个
+     * @return
+     */
+    private VideoQuality selectBestQuality(List<DownloadItem> downloadItems, String quality) {
         String[] priorities = {"1080P", "720P", "480P", "240P", "Unknown"};
+        Map<String, VideoQuality> videoUrls = downloadItems.stream()
+                .collect(Collectors.toMap(DownloadItem::getResolution, item -> new VideoQuality(item.getResolution(), item.getDownloadUrl(), item.getItemType())));
+
+        if (videoUrls.containsKey(quality)){
+            return videoUrls.get(quality);
+        }
+
         for (String p : priorities) {
-            VideoQuality vq = videoUrls.get(p);
-            if (vq != null) {
-                return vq;
+            VideoQuality item = videoUrls.get(p);
+            if (item != null) {
+                return item;
             }
         }
-        return videoUrls.values().iterator().next();
+        VideoQuality defaultValue = videoUrls.values().iterator().next();
+        return defaultValue;
     }
 
     // ======================== 其他 ========================

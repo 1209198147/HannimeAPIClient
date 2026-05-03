@@ -78,4 +78,12 @@ public class HanimeConfig {
     public static HanimeConfig defaultConfigHK() {
         return HanimeConfig.builder().baseUrl(DEFAULT_BASE_URL_HK).build();
     }
+
+    /**
+     * 用户语言偏好
+     * zht: 繁体中文
+     * zhs: 简体中文
+     */
+    @Builder.Default
+    private final String userLang = "zhs";
 }

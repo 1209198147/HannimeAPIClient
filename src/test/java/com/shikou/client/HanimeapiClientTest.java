@@ -87,7 +87,7 @@ public class HanimeapiClientTest {
     @Test
     public void testDownload() throws Exception {
         System.out.println("--- 下载视频 ---");
-        String videoCode = "405939";
+        String videoCode = "404983";
         File outputFile = new File(System.getProperty("user.home") + "/Downloads", videoCode + ".mp4");
         client.download(videoCode, "720P", outputFile, (downloaded, total) -> {
             double percent = (double) downloaded / total * 100;

@@ -33,6 +33,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl())
                 .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -96,6 +97,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(urlBuilder.build())
                 .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -135,6 +137,7 @@ public class HanimeBaseService {
                 .url(url)
                 .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -145,6 +148,37 @@ public class HanimeBaseService {
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             HanimeVideo video = HtmlParser.parseVideoDetail(doc);
             return video;
+        } catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    // ======================== 下载页 ========================
+
+    /**
+     * 获取下载页面
+     * @param videoCode 影片代码
+     * @return DownloadPage 下载页面数据
+     */
+    public DownloadInfo getDownloadInfo(String videoCode) throws HanimeException {
+        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "download").newBuilder()
+                .addQueryParameter("v", videoCode)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取下载页面失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            return HtmlParser.parseDownloadPage(doc);
         } catch (IOException e) {
             throw new HanimeNetworkException(e.getMessage());
         }
@@ -161,6 +195,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "previews/" + date)
                 .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -185,6 +220,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
                 .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -245,6 +281,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
                 .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {

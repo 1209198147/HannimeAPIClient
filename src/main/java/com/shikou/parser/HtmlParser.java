@@ -147,6 +147,102 @@ public class HtmlParser {
         }
     }
 
+    public static DownloadInfo parseDownloadPage(Document doc) {
+        DownloadInfo downloadInfo = new DownloadInfo();
+            
+        // 解析标题
+        Element titleEl = doc.selectFirst("#content-div > div.row.no-gutter.video-show-width.download-panel > div.col-md-12 > div > div > h3");
+        if (titleEl != null) {
+            downloadInfo.setTitle(titleEl.text().trim());
+        }
+            
+        // 解析上传时间/观看次数
+        Element metaEl = doc.selectFirst("#content-div > div.row.no-gutter.video-show-width.download-panel > div.col-md-12 > div > div > div:nth-child(1) > p");
+        if (metaEl != null) {
+            String metaText = metaEl.text().trim();
+            String[] parts = metaText.split("\\s*\\|\\s*");
+            if (parts.length >= 1) {
+                downloadInfo.setUpdateTime(parts[0].trim());
+            }
+            if (parts.length >= 2) {
+                downloadInfo.setViews(parts[1].trim());
+            }
+        }
+            
+        // 解析封面图
+        Element coverEl = doc.selectFirst("#content-div > div.row.no-gutter.video-show-width.download-panel > div.col-md-12 > div > div > img");
+        if (coverEl != null) {
+            String src = coverEl.attr("abs:src");
+            if (src == null || src.isEmpty()) {
+                src = coverEl.attr("src");
+            }
+            downloadInfo.setCoverImg(src);
+        }
+            
+        // 解析下载项列表
+        List<DownloadItem> downloadItems = new ArrayList<>();
+        Element tableEl = doc.selectFirst("#content-div > div.row.no-gutter.video-show-width.download-panel > div.col-md-12 > div > div > table");
+        if (tableEl != null) {
+            Elements rows = tableEl.select("tbody > tr");
+            for (int i = 1; i < rows.size(); i++) { // 跳过表头行
+                Element row = rows.get(i);
+                DownloadItem item = new DownloadItem();
+                    
+                // 解析分辨率
+                Element resolutionEl = row.selectFirst("td:nth-child(2)");
+                if (resolutionEl != null) {
+                    String resolutionText = resolutionEl.text().trim();
+                    // 使用正则表达式提取括号内的分辨率，如 "全高清畫質 (1080p)" -> "1080p"
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\((\\d+p)\\)");
+                    java.util.regex.Matcher matcher = pattern.matcher(resolutionText);
+                    if (matcher.find()) {
+                        String resolution = matcher.group(1).toUpperCase();
+                        item.setResolution(resolution);
+                    } else {
+                        // 如果没有找到括号格式，尝试其他方式
+                        if (resolutionText.contains("1080")) {
+                            item.setResolution("1080P");
+                        } else if (resolutionText.contains("720")) {
+                            item.setResolution("720P");
+                        } else if (resolutionText.contains("480")) {
+                            item.setResolution("480P");
+                        } else if (resolutionText.contains("360")) {
+                            item.setResolution("360P");
+                        } else if (resolutionText.contains("240")) {
+                            item.setResolution("240P");
+                        } else {
+                            item.setResolution("Unknown");
+                        }
+                    }
+                }
+                    
+                // 解析文件类型
+                Element typeEl = row.selectFirst("td:nth-child(3)");
+                if (typeEl != null) {
+                    item.setItemType(typeEl.text().trim());
+                }
+                    
+                // 解析下载链接
+                Element linkEl = row.selectFirst("td:nth-child(5) a");
+                if (linkEl != null) {
+                    String href = linkEl.attr("data-url");
+                    if (href == null || href.isEmpty()) {
+                        href = linkEl.attr("abs:href");
+                    }
+                    if (href == null || href.isEmpty()) {
+                        href = linkEl.attr("href");
+                    }
+                    item.setDownloadUrl(href);
+                }
+                    
+                downloadItems.add(item);
+            }
+        }
+        downloadInfo.setDownloadItems(downloadItems);
+            
+        return downloadInfo;
+    }
+
     /**
      * 从指定分区解析影片列表
      */
