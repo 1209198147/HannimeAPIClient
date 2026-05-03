@@ -295,7 +295,7 @@ public class HtmlParser {
         }
 
         // 观看次数 + 上传时间（同一元素 .hidden-xs 内，如 "观看次数：1.6万次  2026-05-02"）
-        Element metaEl = doc.selectFirst("#player-div-wrapper > div:nth-child(13) > div > div.hidden-xs");
+        Element metaEl = doc.selectFirst("#player-div-wrapper > div.video-details-wrapper.hidden-sm.hidden-md.hidden-lg.hidden-xl");
         if (metaEl != null) {
             String metaText = metaEl.text().trim();
             String[] split = metaText.split(" ");
@@ -451,10 +451,7 @@ public class HtmlParser {
         Artist artist = new Artist();
 
         // 作者名称: a#video-artist-name
-        Element nameEl = artistEl.selectFirst("a#video-artist-name");
-        if (nameEl == null) {
-            nameEl = artistEl.selectFirst("a, .name");
-        }
+        Element nameEl = doc.selectFirst("#video-artist-name");
         if (nameEl != null) {
             artist.setName(nameEl.text().trim());
         }
