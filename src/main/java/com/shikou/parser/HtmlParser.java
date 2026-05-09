@@ -640,11 +640,20 @@ public class HtmlParser {
     public static Playlist parsePlaylist(Document doc) {
         List<VideoInfo> videos = new ArrayList<>();
 
-        Elements cards = doc.select("div.card-mobile-panel.inner");
-        for (Element card : cards) {
-            VideoInfo info = parseMobilePanelCard(card);
-            if (info != null) {
-                videos.add(info);
+        Element titleElem = doc.selectFirst("#video-playlist-wrapper > div.single-icon-wrapper.video-playlist-top > h4:nth-child(1)");
+        String title = null;
+        if (titleElem != null) {
+            title = titleElem.text().trim();
+        }
+
+        Element playListElem = doc.selectFirst(".hover-video-playlist");
+        if (playListElem != null) {
+            Elements cards = playListElem.select("div.related-watch-wrap.multiple-link-wrapper");
+            for (Element card : cards) {
+                VideoInfo info = parsePlayListCard(card);
+                if (info != null) {
+                    videos.add(info);
+                }
             }
         }
 
@@ -661,19 +670,48 @@ public class HtmlParser {
 
         return Playlist.builder()
                 .listCode(listCode)
+                .title(title)
                 .total(videos.size())
                 .videos(videos)
                 .build();
     }
 
     /**
+     * 解playlist card
+     */
+    private static VideoInfo parsePlayListCard(Element card) {
+        if(card == null) {
+            return null;
+        }
+
+        VideoInfo info = new VideoInfo();
+        // videoCode：从链接中提取
+        Element watchLink = card.selectFirst("a[href*=/watch]");
+        if (watchLink != null) {
+            String href = watchLink.attr("abs:href");
+            if (href == null || href.isEmpty()) {
+                href = watchLink.attr("href");
+            }
+            info.setVideoUrl(href);
+            info.setVideoCode(extractVideoCode(href));
+        }
+        Element mobilePanelCardElem = card.selectFirst("div");
+        parseMobilePanelCard(mobilePanelCardElem, info);
+        return info;
+    }
+
+
+    /**
      * 解析单个 .card-mobile-panel.inner 卡片
      */
-    private static VideoInfo parseMobilePanelCard(Element card) {
-        VideoInfo info = new VideoInfo();
+    private static void parseMobilePanelCard(Element mobilePanelCardElem, VideoInfo info) {
+
+        if(mobilePanelCardElem == null || info == null) {
+            return;
+        }
 
         // 封面图：取第2个img（缩略图层，带亮度遮罩）
-        Elements imgs = card.select("img");
+        Elements imgs = mobilePanelCardElem.select("img");
         if (imgs.size() >= 2) {
             Element thumbImg = imgs.get(1);
             String src = thumbImg.attr("abs:src");
@@ -694,31 +732,20 @@ public class HtmlParser {
             info.setCoverUrl(src);
         }
 
-        // videoCode：从链接中提取
-        Element watchLink = card.selectFirst("a[href*=/watch]");
-        if (watchLink != null) {
-            String href = watchLink.attr("abs:href");
-            if (href == null || href.isEmpty()) {
-                href = watchLink.attr("href");
-            }
-            info.setVideoUrl(href);
-            info.setVideoCode(extractVideoCode(href));
-        }
-
         // 时长: .card-playlist-small
-        Element durationEl = card.selectFirst("div.card-playlist-small");
+        Element durationEl = mobilePanelCardElem.selectFirst("div.card-playlist-small");
         if (durationEl != null) {
             info.setDuration(durationEl.text().trim());
         }
 
         // 标题: .card-mobile-title（优先于img alt）
-        Element titleEl = card.selectFirst("div.card-mobile-title");
+        Element titleEl = mobilePanelCardElem.selectFirst("div.card-mobile-title");
         if (titleEl != null) {
             info.setTitle(titleEl.text().trim());
         }
 
         // 上传者: a.card-mobile-user
-        Element uploaderEl = card.selectFirst("a.card-mobile-user");
+        Element uploaderEl = mobilePanelCardElem.selectFirst("a.card-mobile-user");
         if (uploaderEl != null) {
             info.setUploader(uploaderEl.text().trim());
             String uploaderHref = uploaderEl.attr("abs:href");
@@ -729,7 +756,7 @@ public class HtmlParser {
         }
 
         // 统计信息: .card-playlist-large 列表
-        Elements statEls = card.select("div.card-playlist-large");
+        Elements statEls = mobilePanelCardElem.select("div.card-playlist-large");
         for (Element stat : statEls) {
             String text = stat.text().trim();
             if (text.contains("%")) {
@@ -740,12 +767,10 @@ public class HtmlParser {
         }
 
         // 現正播放
-        Element playingEl = card.selectFirst("div[style*=translate]");
+        Element playingEl = mobilePanelCardElem.selectFirst("div[style*=translate]");
         if (playingEl != null && playingEl.text().contains("現正播放")) {
             info.setPlaying(true);
         }
-
-        return info;
     }
 
     // ======================== 工具方法 ========================
