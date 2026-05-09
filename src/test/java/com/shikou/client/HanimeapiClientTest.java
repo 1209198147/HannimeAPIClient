@@ -2,10 +2,7 @@ package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.HanimeException;
-import com.shikou.model.HanimeVideo;
-import com.shikou.model.HomePage;
-import com.shikou.model.SearchParams;
-import com.shikou.model.VideoInfo;
+import com.shikou.model.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -82,6 +79,23 @@ public class HanimeapiClientTest {
             System.out.println("可用画质: " + video.getVideoUrls().keySet());
         }
         System.out.println();
+    }
+
+    @Test
+    public void testDownloadInfo() throws HanimeException {
+        DownloadInfo downloadInfo = client.getDownloadInfo("405939");
+
+        System.out.println("标题: " + downloadInfo.getTitle());
+        System.out.println("观看次数: " + downloadInfo.getViews());
+        System.out.println("封面: " + downloadInfo.getCoverImg());
+        System.out.println("上传时间: " + downloadInfo.getUpdateTime());
+        List<DownloadItem> downloadItems = downloadInfo.getDownloadItems();
+        for (DownloadItem downloadItem : downloadItems) {
+            System.out.println("--------------------");
+            System.out.println("分辨率: " + downloadItem.getResolution());
+            System.out.println("下载链接: " + downloadItem.getDownloadUrl());
+            System.out.println("类型: " + downloadItem.getItemType());
+        }
     }
 
     @Test
