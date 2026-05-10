@@ -1,10 +1,11 @@
-package com.shikou.model;
+package com.shikou.model.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,29 +24,24 @@ public class SearchParams {
     /** 搜索关键词 */
     private String query;
 
+    /** 类型 - 无用 */
+    @Deprecated
+    private String type;
+
     /** 类型 */
     private String genre;
 
     /** 排序方式 */
     private String sort;
 
-    /** 模糊搜索，"on"启用 */
-    private String broad;
-
-    /** 发布年份 */
-    private Integer year;
-
-    /** 发布月份 */
-    private Integer month;
+    /** 日期 */
+    private String date;
 
     /** 时长 */
     private String duration;
 
-    /** 标签集合 */
-    private Set<String> tags;
-
-    /** 品牌集合 */
-    private Set<String> brands;
+    /** 标签 */
+    private List<String> tags;
 
     public SearchParams(String query) {
         this.query = query;

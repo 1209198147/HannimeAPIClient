@@ -1,5 +1,7 @@
-package com.shikou.model;
+package com.shikou.model.entities.page;
 
+import com.shikou.model.entities.PreviewInfo;
+import com.shikou.model.entities.VideoInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

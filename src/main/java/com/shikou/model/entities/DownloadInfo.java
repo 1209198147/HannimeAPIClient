@@ -1,4 +1,4 @@
-package com.shikou.model;
+package com.shikou.model.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

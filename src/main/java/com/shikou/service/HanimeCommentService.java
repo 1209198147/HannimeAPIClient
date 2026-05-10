@@ -8,7 +8,7 @@ import com.shikou.config.HanimeConfig;
 import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
-import com.shikou.model.Comment;
+import com.shikou.model.entities.Comment;
 import okhttp3.*;
 
 import java.io.IOException;

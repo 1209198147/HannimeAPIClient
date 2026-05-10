@@ -2,13 +2,19 @@ package com.shikou.service;
 
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.*;
-import com.shikou.model.*;
+import com.shikou.model.entities.*;
+import com.shikou.model.entities.page.HomePage;
+import com.shikou.model.entities.page.PreviewPage;
+import com.shikou.model.entities.page.SearchPage;
 import com.shikou.parser.HtmlParser;
 import okhttp3.*;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 基础服务 - 首页、搜索、影片详情、预览、登录
@@ -57,45 +63,10 @@ public class HanimeBaseService {
      * @return 影片列表
      */
     public List<VideoInfo> search(SearchParams params) throws HanimeException {
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
-
-        if (params.getPage() > 0) {
-            urlBuilder.addQueryParameter("page", String.valueOf(params.getPage()));
-        }
-        if (params.getQuery() != null && !params.getQuery().isEmpty()) {
-            urlBuilder.addQueryParameter("query", params.getQuery());
-        }
-        if (params.getGenre() != null && !params.getGenre().isEmpty()) {
-            urlBuilder.addQueryParameter("genre", params.getGenre());
-        }
-        if (params.getSort() != null && !params.getSort().isEmpty()) {
-            urlBuilder.addQueryParameter("sort", params.getSort());
-        }
-        if (params.getBroad() != null && !params.getBroad().isEmpty()) {
-            urlBuilder.addQueryParameter("broad", params.getBroad());
-        }
-        if (params.getYear() != null) {
-            urlBuilder.addQueryParameter("year", String.valueOf(params.getYear()));
-        }
-        if (params.getMonth() != null) {
-            urlBuilder.addQueryParameter("month", String.valueOf(params.getMonth()));
-        }
-        if (params.getDuration() != null && !params.getDuration().isEmpty()) {
-            urlBuilder.addQueryParameter("duration", params.getDuration());
-        }
-        if (params.getTags() != null) {
-            for (String tag : params.getTags()) {
-                urlBuilder.addQueryParameter("tags[]", tag);
-            }
-        }
-        if (params.getBrands() != null) {
-            for (String brand : params.getBrands()) {
-                urlBuilder.addQueryParameter("brands[]", brand);
-            }
-        }
+        HttpUrl url = getSearchUrl(params);
 
         Request request = new Request.Builder()
-                .url(urlBuilder.build())
+                .url(url)
                 .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
@@ -110,6 +81,35 @@ public class HanimeBaseService {
         } catch (IOException e) {
             throw new HanimeNetworkException(e.getMessage());
         }
+    }
+
+    private HttpUrl getSearchUrl(SearchParams params) {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
+
+        if (params.getPage() > 0) {
+            urlBuilder.addQueryParameter("page", String.valueOf(params.getPage()));
+        }
+        if (StringUtils.isNotEmpty(params.getQuery())) {
+            urlBuilder.addQueryParameter("query", params.getQuery());
+        }
+        if (StringUtils.isNotEmpty(params.getGenre())) {
+            urlBuilder.addQueryParameter("genre", params.getGenre());
+        }
+        if (params.getTags() != null && !params.getTags().isEmpty()) {
+            for (String tag : params.getTags()) {
+                urlBuilder.addQueryParameter("tags[]", tag);
+            }
+        }
+        if (StringUtils.isNotEmpty(params.getSort())) {
+            urlBuilder.addQueryParameter("sort", params.getSort());
+        }
+        if(StringUtils.isNotEmpty(params.getDate())){
+            urlBuilder.addQueryParameter("date", params.getDate());
+        }
+        if (StringUtils.isNotEmpty(params.getDuration())) {
+            urlBuilder.addQueryParameter("duration", params.getDuration());
+        }
+        return urlBuilder.build();
     }
 
     /**
@@ -287,6 +287,90 @@ public class HanimeBaseService {
         try (Response response = client.newCall(request).execute()) {
             return response.code() == 404;
         }catch (IOException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    public List<String> getGenreList() throws HanimeNetworkException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
+
+        Request request = new Request.Builder()
+                .url(urlBuilder.build())
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取类型列表失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            return HtmlParser.parseGenreList(doc);
+        } catch (IOException | HanimeApiException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    public Map<String, List<String>> getTagsMap() throws HanimeNetworkException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
+
+        Request request = new Request.Builder()
+                .url(urlBuilder.build())
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取标签列表失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            return HtmlParser.parseTagsMap(doc);
+        } catch (IOException | HanimeApiException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    public List<String> getSortTypeList() throws HanimeNetworkException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(config.getBaseUrl() + "search").newBuilder();
+
+        Request request = new Request.Builder()
+                .url(urlBuilder.build())
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取排序方式列表失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            return HtmlParser.parseSortTypeList(doc);
+        } catch (IOException | HanimeApiException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    public SearchPage getSearchPage(SearchParams params) throws HanimeNetworkException {
+        HttpUrl url = getSearchUrl(params);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取搜索页面失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            return HtmlParser.parseSearchPage(doc);
+        } catch (IOException | HanimeApiException e) {
             throw new HanimeNetworkException(e.getMessage());
         }
     }

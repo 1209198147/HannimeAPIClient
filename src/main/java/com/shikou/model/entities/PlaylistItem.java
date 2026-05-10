@@ -1,31 +1,26 @@
-package com.shikou.model;
+package com.shikou.model.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
- * 播放列表
+ * 播放列表项
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Playlist {
+public class PlaylistItem {
 
-    /** 播放列表代码 */
+    /** 列表代码，如 "WL"(稍后观看), "LL"(喜欢的影片), "SL"(订阅) */
     private String listCode;
 
-    /** 标题 */
+    /** 列表标题 */
     private String title;
 
     /** 影片总数 */
     @Builder.Default
     private int total = 0;
-
-    /** 影片列表 */
-    private List<VideoInfo> videos;
 }

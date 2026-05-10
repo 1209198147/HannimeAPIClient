@@ -1,6 +1,10 @@
 package com.shikou.parser;
 
-import com.shikou.model.*;
+import com.shikou.model.entities.*;
+import com.shikou.model.entities.page.HomePage;
+import com.shikou.model.entities.page.PreviewPage;
+import com.shikou.model.entities.page.SearchPage;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -189,29 +193,29 @@ public class HtmlParser {
                 DownloadItem item = new DownloadItem();
                     
                 // 解析分辨率
-                Element resolutionEl = row.selectFirst("td:nth-child(2)");
-                if (resolutionEl != null) {
-                    String resolutionText = resolutionEl.text().trim();
+                Element qualityEl = row.selectFirst("td:nth-child(2)");
+                if (qualityEl != null) {
+                    String qualityText = qualityEl.text().trim();
                     // 使用正则表达式提取括号内的分辨率，如 "全高清畫質 (1080p)" -> "1080p"
                     java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\((\\d+p)\\)");
-                    java.util.regex.Matcher matcher = pattern.matcher(resolutionText);
+                    java.util.regex.Matcher matcher = pattern.matcher(qualityText);
                     if (matcher.find()) {
-                        String resolution = matcher.group(1).toUpperCase();
-                        item.setResolution(resolution);
+                        String quality = matcher.group(1).toUpperCase();
+                        item.setQuality(quality);
                     } else {
                         // 如果没有找到括号格式，尝试其他方式
-                        if (resolutionText.contains("1080")) {
-                            item.setResolution("1080P");
-                        } else if (resolutionText.contains("720")) {
-                            item.setResolution("720P");
-                        } else if (resolutionText.contains("480")) {
-                            item.setResolution("480P");
-                        } else if (resolutionText.contains("360")) {
-                            item.setResolution("360P");
-                        } else if (resolutionText.contains("240")) {
-                            item.setResolution("240P");
+                        if (qualityText.contains("1080")) {
+                            item.setQuality("1080P");
+                        } else if (qualityText.contains("720")) {
+                            item.setQuality("720P");
+                        } else if (qualityText.contains("480")) {
+                            item.setQuality("480P");
+                        } else if (qualityText.contains("360")) {
+                            item.setQuality("360P");
+                        } else if (qualityText.contains("240")) {
+                            item.setQuality("240P");
                         } else {
-                            item.setResolution("Unknown");
+                            item.setQuality("Unknown");
                         }
                     }
                 }
@@ -351,7 +355,7 @@ public class HtmlParser {
         if (videoElement != null) {
             Elements sources = videoElement.select("source");
             for (Element source : sources) {
-                String resolution = source.attr("size") + "P";
+                String quality = source.attr("size") + "P";
                 String url = source.absUrl("src");
                 if (url.isEmpty()) {
                     url = source.attr("src");
@@ -359,7 +363,7 @@ public class HtmlParser {
                 String mimeType = source.attr("type");
                 String suffix = getFileSuffix(mimeType);
                 if (!url.isEmpty()) {
-                    videoUrls.put(resolution, new VideoQuality(resolution, url, suffix));
+                    videoUrls.put(quality, new VideoQuality(quality, url, suffix));
                 }
             }
         }
@@ -979,5 +983,84 @@ public class HtmlParser {
         }
 
         return info;
+    }
+
+    public static List<String> parseGenreList(Document doc) {
+        List<String> genres = new ArrayList<>();
+        Element genreModalElem = doc.selectFirst("#genre-modal > div > div > div.modal-body");
+        if (genreModalElem != null) {
+            Elements genreElems = genreModalElem.select(".hentai-sort-options");
+            for (Element genreElem : genreElems) {
+                if(genreElem != null) {
+                    String value = genreElem.text().trim();
+                    if(StringUtils.isNotBlank(value)) {
+                        genres.add(value);
+                    }
+                }
+            }
+        }
+        return genres;
+    }
+
+    public static Map<String, List<String>> parseTagsMap(Document doc) {
+        Map<String, List<String>> tagsMap = new HashMap<>();
+        Element tagModalElem = doc.selectFirst("#tags > div > div > div.modal-body");
+        if (tagModalElem != null) {
+            Elements children = tagModalElem.children();
+            String currentType = null;
+            List<String> tags = new ArrayList<>();
+            for (Element child : children) {
+                if (child.is("div")) {
+                    continue;
+                }
+                if (child.is("h5")) {
+                    if(currentType != null) {
+                        tagsMap.put(currentType, tags);
+                    }
+                    currentType = child.text().trim();
+                    tags = new ArrayList<>();
+                }
+                if (child.is("label")) {
+                    tags.add(child.text().trim());
+                }
+            }
+            if(currentType != null) {
+                tagsMap.put(currentType, tags);
+            }
+        }
+        return tagsMap;
+    }
+
+    public static List<String> parseSortTypeList(Document doc) {
+        List<String> sortTypes = new ArrayList<>();
+        Element sortModalElem = doc.selectFirst("#sort-modal > div > div > div.modal-body");
+        if (sortModalElem != null) {
+            Elements sortElems =sortModalElem.select(".hentai-sort-options");
+            for (Element sortElem : sortElems) {
+                if(sortElem != null) {
+                    String value = sortElem.text().trim();
+                    if(StringUtils.isNotBlank(value)) {
+                        sortTypes.add(value);
+                    }
+                }
+            }
+        }
+        return sortTypes;
+    }
+
+    public static SearchPage parseSearchPage(Document doc) {
+        SearchPage searchPage = new SearchPage();
+        List<String> genres = parseGenreList(doc);
+        searchPage.setGenres(genres);
+
+        Map<String, List<String>> tagsMap = parseTagsMap(doc);
+        searchPage.setTagsMap(tagsMap);
+
+        List<String> strings = parseSortTypeList(doc);
+        searchPage.setSortTypes(strings);
+
+        List<VideoInfo> videoInfos = parseVideoCards(doc);
+        searchPage.setVideos(videoInfos);
+        return searchPage;
     }
 }

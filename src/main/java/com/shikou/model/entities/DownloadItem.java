@@ -1,4 +1,4 @@
-package com.shikou.model;
+package com.shikou.model.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DownloadItem {
     /** 分辨率标识，如 "1080P", "720P", "480P", "240P", "Unknown" */
-    private String resolution;
+    private String quality;
     /** 列表项类型: mp4 */
     private String itemType;
     /** 文件大小 - 此属性无用*/

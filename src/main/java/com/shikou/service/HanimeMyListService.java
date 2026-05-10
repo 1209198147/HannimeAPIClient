@@ -4,8 +4,8 @@ import com.shikou.config.HanimeConfig;
 import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
-import com.shikou.model.VideoInfo;
-import com.shikou.model.PlaylistItem;
+import com.shikou.model.entities.VideoInfo;
+import com.shikou.model.entities.PlaylistItem;
 import com.shikou.parser.HtmlParser;
 import okhttp3.*;
 
