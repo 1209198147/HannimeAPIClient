@@ -6,6 +6,7 @@ import com.shikou.model.entities.page.PreviewPage;
 import com.shikou.model.entities.page.SearchPage;
 import com.shikou.model.entities.page.WatchPage;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -1080,6 +1081,176 @@ public class HtmlParser {
         page.setRelatedHanimes(parseRelatedHanimes(doc));
 
         return page;
+    }
+
+    // ======================== 评论解析 ========================
+
+    /**
+     * 从评论/回复 HTML 中解析评论列表
+     * <p>解析 JSON 响应中的 comments 或 replies 字段（HTML片段）</p>
+     *
+     * @param html 评论 HTML 片段
+     * @return 评论列表
+     */
+    public static List<Comment> parseComments(String html) {
+        List<Comment> comments = new ArrayList<>();
+        if (StringUtils.isEmpty(html)) {
+            return comments;
+        }
+
+        Document doc = Jsoup.parseBodyFragment(html);
+
+        // 每个评论以 div.report-btn-wrapper 为核心，从中提取 data-reportable-id
+        Elements wrappers = doc.select("div.report-btn-wrapper");
+        for (Element wrapper : wrappers) {
+            Comment comment = parseSingleCommentBlock(wrapper);
+            if (comment != null && comment.getId() != null) {
+                comments.add(comment);
+            }
+        }
+
+        return comments;
+    }
+
+    /**
+     * 从单个 report-btn-wrapper 元素解析一条评论
+     *
+     * <p>评论 HTML 结构:</p>
+     * <pre>
+     * &lt;a&gt;&lt;img class="img-circle" src="..."&gt;&lt;/a&gt;          ← 头像（评论场景在 wrapper 前面）
+     * &lt;div class="report-btn-wrapper"&gt;                       ← 当前元素
+     *   &lt;div class="comment-index-text" style="font-size: 0.9em;"&gt;
+     *     &lt;a&gt;用户名 &lt;span&gt;时间&lt;/span&gt;&lt;/a&gt;
+     *   &lt;/div&gt;
+     *   &lt;div class="comment-index-text" style="...font-size: 1em..."&gt;内容&lt;/div&gt;
+     *   &lt;span data-reportable-id="ID"&gt;more_vert&lt;/span&gt;
+     * &lt;/div&gt;
+     * &lt;div id="comment-like-form-wrapper"&gt;                     ← 点赞区域（后一个兄弟元素）
+     *   &lt;div&gt;&lt;span&gt;thumb_up&lt;/span&gt;&lt;span&gt;点赞数&lt;/span&gt;&lt;/div&gt;
+     *   &lt;div&gt;&lt;span&gt;thumb_down&lt;/span&gt;&lt;/div&gt;
+     * &lt;/div&gt;
+     * </pre>
+     *
+     * <p>回复 HTML 结构（avatar 在 wrapper 内部）:</p>
+     * <pre>
+     * &lt;div class="report-btn-wrapper"&gt;
+     *   &lt;a&gt;&lt;img class="img-circle" src="..."&gt;&lt;/a&gt;          ← 头像（回复场景在 wrapper 内部）
+     *   &lt;div class="comment-index-text"&gt;...&lt;/div&gt;
+     *   ...
+     * &lt;/div&gt;
+     * </pre>
+     */
+    private static Comment parseSingleCommentBlock(Element reportWrapper) {
+        // 1. 提取评论ID（data-reportable-id）
+        Element reportBtn = reportWrapper.selectFirst("[data-reportable-id]");
+        if (reportBtn == null) {
+            return null;
+        }
+        String id = reportBtn.attr("data-reportable-id");
+        if (StringUtils.isEmpty(id)) {
+            return null;
+        }
+
+        Comment comment = new Comment();
+        comment.setId(id);
+
+        // 2. 头像：优先在 wrapper 内部查找（回复场景），否则向前查找兄弟元素（评论场景）
+        Element avatarLink = reportWrapper.selectFirst("a:has(img.img-circle)");
+        if (avatarLink == null) {
+            Element prev = reportWrapper.previousElementSibling();
+            while (prev != null && !"a".equals(prev.tagName())) {
+                prev = prev.previousElementSibling();
+            }
+            avatarLink = prev;
+        }
+        if (avatarLink != null) {
+            Element img = avatarLink.selectFirst("img.img-circle");
+            if (img != null) {
+                comment.setAvatarUrl(getAbsUrl(img, "src"));
+            }
+        }
+
+        // 3. 用户名和时间：第一个 comment-index-text > a
+        Element nameTimeDiv = reportWrapper.selectFirst("div.comment-index-text");
+        if (nameTimeDiv != null) {
+            Element nameLink = nameTimeDiv.selectFirst("a");
+            if (nameLink != null) {
+                Element timeSpan = nameLink.selectFirst("span");
+                if (timeSpan != null) {
+                    comment.setTime(timeSpan.text().trim());
+                    // ownText() 排除 span 内部的文本，只取 <a> 直接文本
+                    comment.setUsername(nameLink.ownText().trim());
+                } else {
+                    comment.setUsername(nameLink.text().trim());
+                }
+            }
+        }
+
+        // 4. 内容：style 中包含 "font-size: 1em" 的 comment-index-text（评论区正文）
+        Elements textDivs = reportWrapper.select("div.comment-index-text");
+        for (Element div : textDivs) {
+            String style = div.attr("style");
+            if (style.contains("font-size: 1em") || style.contains("font-size:1em")) {
+                comment.setText(div.text().trim());
+                break;
+            }
+        }
+        // 降级处理：取第二个 comment-index-text
+        if (comment.getText() == null && textDivs.size() >= 2) {
+            comment.setText(textDivs.get(1).text().trim());
+        }
+
+        // 5. 点赞数和踩数：在后续兄弟元素中查找
+        //    评论区：report-btn-wrapper 的下一个兄弟是 comment-like-form-wrapper
+        //    回复区：report-btn-wrapper 的下一个兄弟是包含点赞的普通 div
+        Element sibling = reportWrapper.nextElementSibling();
+        while (sibling != null) {
+            String siblingId = sibling.id();
+            boolean isLikeForm = (siblingId != null && siblingId.startsWith("comment-like-form-wrapper"))
+                    || sibling.select("span.material-icons-outlined").size() > 0;
+            if (isLikeForm) {
+                // 点赞数：thumb_up 后面的 span
+                Elements thumbSpans = sibling.select("span.material-icons-outlined");
+                for (Element span : thumbSpans) {
+                    String iconText = span.text().trim();
+                    if ("thumb_up".equals(iconText)) {
+                        Element parentDiv = span.parent();
+                        if (parentDiv != null) {
+                            Elements allSpans = parentDiv.select("span");
+                            if (allSpans.size() >= 2) {
+                                String likesStr = allSpans.get(1).text().trim();
+                                // 过滤掉 "display:none" 的占位 0
+                                String displayStyle = allSpans.get(1).attr("style");
+                                if (!displayStyle.contains("display:none")) {
+                                    try {
+                                        comment.setLikes(Integer.parseInt(likesStr));
+                                    } catch (NumberFormatException ignored) {
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // 6. 回复数：从 .load-replies-btn 中提取
+                //    文本格式如 "查看 1 則回覆" 或 "查看 5 則回覆"
+                Element repliesBtn = sibling.selectFirst(".load-replies-btn");
+                if (repliesBtn != null) {
+                    String repliesText = repliesBtn.text().trim();
+                    java.util.regex.Pattern replyPattern = java.util.regex.Pattern.compile("(\\d+)\\s*則回覆");
+                    java.util.regex.Matcher replyMatcher = replyPattern.matcher(repliesText);
+                    if (replyMatcher.find()) {
+                        try {
+                            comment.setReplyCount(Integer.parseInt(replyMatcher.group(1)));
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+                break;
+            }
+            sibling = sibling.nextElementSibling();
+        }
+
+        return comment;
     }
 
     // ======================== 工具方法 ========================

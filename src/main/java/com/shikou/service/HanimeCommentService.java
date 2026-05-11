@@ -1,19 +1,18 @@
 package com.shikou.service;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.Comment;
+import com.shikou.parser.HtmlParser;
 import com.shikou.util.HanimeHttpExecutor;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,11 +38,8 @@ public class HanimeCommentService {
      * @param code 影片代码
      * @return 评论列表
      */
-    public List<Comment> getComments(String type, String code) throws HanimeException {
-        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadComment").newBuilder()
-                .addQueryParameter("type", type)
-                .addQueryParameter("id", code)
-                .build();
+    public List<Comment> getComments(String type, String code) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getCommentsUrl(type, code);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -52,13 +48,23 @@ public class HanimeCommentService {
                 .build();
 
         String json = HanimeHttpExecutor.executeForString(client, request, "获取评论失败");
-        return parseCommentsFromJson(json);
+        return parseCommentsHtml(json, "comments");
+    }
+
+    @NotNull
+    private HttpUrl getCommentsUrl(String type, String code) {
+        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadComment").newBuilder()
+                .addQueryParameter("type", type)
+                .addQueryParameter("id", code)
+                .addQueryParameter("content", "comment-tablink")
+                .build();
+        return url;
     }
 
     /**
      * 获取影片评论
      */
-    public List<Comment> getVideoComments(String videoCode) throws HanimeException {
+    public List<Comment> getVideoComments(String videoCode) throws HanimeNetworkException, HanimeApiException {
         return getComments("video", videoCode);
     }
 
@@ -69,10 +75,8 @@ public class HanimeCommentService {
      * @param commentId 评论ID
      * @return 回复列表
      */
-    public List<Comment> getReplies(String commentId) throws HanimeException {
-        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadReplies").newBuilder()
-                .addQueryParameter("id", commentId)
-                .build();
+    public List<Comment> getReplies(String commentId) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getRepliesUrl(commentId);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -81,7 +85,15 @@ public class HanimeCommentService {
                 .build();
 
         String json = HanimeHttpExecutor.executeForString(client, request, "获取回复失败");
-        return parseCommentsFromJson(json);
+        return parseCommentsHtml(json, "replies");
+    }
+
+    @NotNull
+    private HttpUrl getRepliesUrl(String commentId) {
+        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadReplies").newBuilder()
+                .addQueryParameter("id", commentId)
+                .build();
+        return url;
     }
 
     // ======================== 发表评论 ========================
@@ -182,69 +194,20 @@ public class HanimeCommentService {
         }
     }
 
-    // ======================== JSON解析 ========================
+    // ======================== HTML解析 ========================
 
-    private List<Comment> parseCommentsFromJson(String json) {
-        List<Comment> comments = new ArrayList<>();
-        try {
-            JsonElement element = gson.fromJson(json, JsonElement.class);
-            JsonArray array;
-            if (element.isJsonArray()) {
-                array = element.getAsJsonArray();
-            } else if (element.isJsonObject()) {
-                JsonObject obj = element.getAsJsonObject();
-                if (obj.has("comments")) {
-                    array = obj.getAsJsonArray("comments");
-                } else if (obj.has("data")) {
-                    array = obj.getAsJsonArray("data");
-                } else {
-                    for (String key : obj.keySet()) {
-                        if (obj.get(key).isJsonArray()) {
-                            array = obj.getAsJsonArray(key);
-                            break;
-                        }
-                    }
-                    return comments;
-                }
-            } else {
-                return comments;
-            }
-
-            for (JsonElement item : array) {
-                if (item.isJsonObject()) {
-                    comments.add(parseSingleComment(item.getAsJsonObject()));
-                }
-            }
-        } catch (Exception ignored) {
+    /**
+     * 从 JSON 响应中提取指定字段的 HTML 并解析为评论列表
+     * @param json     JSON 响应字符串
+     * @param htmlKey  HTML 字段名（"comments" 或 "replies"）
+     * @return 评论列表
+     */
+    private List<Comment> parseCommentsHtml(String json, String htmlKey) {
+        JsonObject obj = gson.fromJson(json, JsonObject.class);
+        if (obj == null || !obj.has(htmlKey)) {
+            return List.of();
         }
-        return comments;
-    }
-
-    private Comment parseSingleComment(JsonObject obj) {
-        Comment comment = new Comment();
-
-        if (obj.has("id")) comment.setId(getStringValue(obj, "id"));
-        if (obj.has("text")) comment.setText(getStringValue(obj, "text"));
-        else if (obj.has("content")) comment.setText(getStringValue(obj, "content"));
-        if (obj.has("username")) comment.setUsername(getStringValue(obj, "username"));
-        else if (obj.has("user")) comment.setUsername(getStringValue(obj, "user"));
-        if (obj.has("avatar")) comment.setAvatarUrl(getStringValue(obj, "avatar"));
-        else if (obj.has("avatar_url")) comment.setAvatarUrl(getStringValue(obj, "avatar_url"));
-        if (obj.has("time")) comment.setTime(getStringValue(obj, "time"));
-        else if (obj.has("created_at")) comment.setTime(getStringValue(obj, "created_at"));
-        if (obj.has("likes")) comment.setLikes(getIntValue(obj, "likes"));
-        if (obj.has("dislikes")) comment.setDislikes(getIntValue(obj, "dislikes"));
-
-        return comment;
-    }
-
-    private String getStringValue(JsonObject obj, String key) {
-        JsonElement el = obj.get(key);
-        return el != null && !el.isJsonNull() ? el.getAsString() : null;
-    }
-
-    private int getIntValue(JsonObject obj, String key) {
-        JsonElement el = obj.get(key);
-        return el != null && !el.isJsonNull() ? el.getAsInt() : 0;
+        String html = obj.get(htmlKey).getAsString();
+        return HtmlParser.parseComments(html);
     }
 }

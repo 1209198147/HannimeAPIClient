@@ -47,6 +47,10 @@ public class Comment {
     @Builder.Default
     private boolean disliked = false;
 
+    /** 回复数 */
+    @Builder.Default
+    private int replyCount = 0;
+
     /** 回复列表 */
     private List<Comment> replies;
 }

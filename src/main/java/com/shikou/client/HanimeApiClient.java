@@ -157,6 +157,18 @@ public class HanimeApiClient {
         return baseService.getWatchPage(videoCode);
     }
 
+    public List<Comment> getComments(String type, String code) throws HanimeApiException, HanimeNetworkException {
+        return commentService.getComments(type, code);
+    }
+
+    public List<Comment> getVideoComments(String videoCode) throws HanimeApiException, HanimeNetworkException {
+        return commentService.getVideoComments(videoCode);
+    }
+
+    public List<Comment> getReplies(String commentId) throws HanimeApiException, HanimeNetworkException {
+        return commentService.getReplies(commentId);
+    }
+
     public List<String> getGenreList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getGenreList();
     }

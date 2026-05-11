@@ -254,6 +254,65 @@ public class HanimeapiClientTest {
     }
 
     @Test
+    public void testGetComments() throws Exception {
+        System.out.println("--- 获取视频评论 ---");
+        String videoCode = "405939";
+        List<Comment> comments = client.getComments("video", videoCode);
+        System.out.println("评论总数: " + comments.size());
+        for (int i = 0; i < Math.min(5, comments.size()); i++) {
+            Comment c = comments.get(i);
+            System.out.println("  [" + (i + 1) + "] " + c.getUsername() + " | " + c.getTime());
+            System.out.println("      ID: " + c.getId());
+            System.out.println("      内容: " + (c.getText() != null ? c.getText().substring(0, Math.min(50, c.getText().length())) : "null"));
+            System.out.println("      头像: " + c.getAvatarUrl());
+            System.out.println("      点赞: " + c.getLikes() + " | 踩: " + c.getDislikes() + " | 回复: " + c.getReplyCount());
+            if (!comments.isEmpty()) {
+                System.out.println("第一条评论完整信息: " + comments.get(0));
+            }
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void testGetVideoComments() throws Exception {
+        System.out.println("--- 获取影片评论（便捷方法） ---");
+        String videoCode = "405939";
+        List<Comment> comments = client.getVideoComments(videoCode);
+        System.out.println("评论总数: " + comments.size());
+        for (int i = 0; i < Math.min(3, comments.size()); i++) {
+            Comment c = comments.get(i);
+            System.out.println("  [" + (i + 1) + "] " + c.getUsername() + ": "
+                    + (c.getText() != null ? c.getText().substring(0, Math.min(40, c.getText().length())) : "null"));
+        }
+        System.out.println();
+    }
+
+    @Test
+    public void testGetReplies() throws Exception {
+        System.out.println("--- 获取评论回复 ---");
+        // 先获取评论列表，取第一条评论的ID来查询回复
+        String videoCode = "405939";
+        List<Comment> comments = client.getVideoComments(videoCode);
+        if (comments.isEmpty()) {
+            System.out.println("没有评论，跳过回复测试");
+            System.out.println();
+            return;
+        }
+        String commentId = comments.get(0).getId();
+        System.out.println("使用评论ID: " + commentId + " (来自: " + comments.get(0).getUsername() + ")");
+        List<Comment> replies = client.comment().getReplies(commentId);
+        System.out.println("回复总数: " + replies.size());
+        for (int i = 0; i < Math.min(3, replies.size()); i++) {
+            Comment r = replies.get(i);
+            System.out.println("  [" + (i + 1) + "] " + r.getUsername() + " | " + r.getTime());
+            System.out.println("      ID: " + r.getId());
+            System.out.println("      内容: " + (r.getText() != null ? r.getText().substring(0, Math.min(50, r.getText().length())) : "null"));
+            System.out.println("      点赞: " + r.getLikes() + " | 踩: " + r.getDislikes());
+        }
+        System.out.println();
+    }
+
+    @Test
     public void testDownloadWithArgsUrl() throws Exception {
         System.out.println("--- 下载视频 ---");
         String videoCode = "404983";
