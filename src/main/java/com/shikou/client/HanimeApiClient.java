@@ -14,12 +14,13 @@ import com.shikou.model.entities.page.WatchPage;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -338,11 +339,11 @@ public class HanimeApiClient {
             }
             return url;
         }
-        VideoQuality best = selectBestQuality(downloadInfo.getDownloadItems());
-        if (best == null) {
+        String bestQualityUrl = selectBestQuality(downloadInfo.getDownloadItems());
+        if (StringUtils.isBlank(bestQualityUrl)) {
             throw new HanimeApiException("无法获取视频的下载链接");
         }
-        return best.getUrl();
+        return bestQualityUrl;
     }
 
 
@@ -355,18 +356,28 @@ public class HanimeApiClient {
     /**
      * 选择最佳质量的视频
      */
-    private VideoQuality selectBestQuality(List<DownloadItem> downloadItems) {
-        String[] priorities = {"1080P", "720P", "480P", "240P", "Unknown"};
-        Map<String, VideoQuality> videoUrls = downloadItems.stream()
-                .collect(Collectors.toMap(DownloadItem::getQuality, item -> new VideoQuality(item.getQuality(), item.getDownloadUrl(), item.getItemType())));
-
-        for (String p : priorities) {
-            VideoQuality item = videoUrls.get(p);
-            if (item != null) {
-                return item;
-            }
+    private String selectBestQuality(List<DownloadItem> downloadItems) {
+        if(CollectionUtils.isEmpty(downloadItems)){
+            return null;
         }
-        return videoUrls.values().iterator().next();
+
+        Map<String, String> qualityUrlMap = downloadItems.stream()
+                .filter(item -> !StringUtils.isAnyBlank(item.getDownloadUrl(), item.getQuality()))
+                .collect(Collectors.toMap(DownloadItem::getQuality, DownloadItem::getDownloadUrl));
+
+        if(MapUtils.isEmpty(qualityUrlMap)){
+            return null;
+        }
+        List<Map.Entry<String, String>> qualityUrlList = new ArrayList<>(qualityUrlMap.entrySet());
+
+        qualityUrlList.sort((o1, o2) -> {
+            String k1 = o1.getKey();
+            String k2 = o2.getKey();
+            int q1 = Integer.parseInt(k1.substring(0, Math.min(k1.length(), k1.length() - 2)));
+            int q2 = Integer.parseInt(k2.substring(0, Math.min(k2.length(), k2.length() - 2)));
+            return q2 - q1;
+        });
+        return qualityUrlList.getFirst().getValue();
     }
 
     // ======================== 其他 ========================
