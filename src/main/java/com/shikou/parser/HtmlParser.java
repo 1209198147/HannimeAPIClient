@@ -4,6 +4,7 @@ import com.shikou.model.entities.*;
 import com.shikou.model.entities.page.HomePage;
 import com.shikou.model.entities.page.PreviewPage;
 import com.shikou.model.entities.page.SearchPage;
+import com.shikou.model.entities.page.WatchPage;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -320,26 +321,8 @@ public class HtmlParser {
         // 标签
         video.setTags(parseTags(doc));
 
-        // 收藏数
-        Element favEl = doc.selectFirst(".fav-count, .like-count");
-        if (favEl != null) {
-            try {
-                video.setFavTimes(Integer.parseInt(favEl.text().trim()));
-            } catch (NumberFormatException ignored) {}
-        }
-
-        // 是否已收藏
-        Element favBtn = doc.selectFirst(".fav-button.active, .like-button.active");
-        video.setFav(favBtn != null);
-
         // 作者信息
         video.setArtist(parseArtist(doc));
-
-        // 播放列表
-        video.setPlaylist(parsePlaylist(doc));
-
-        // 相关影片
-        video.setRelatedHanimes(parseRelatedHanimes(doc));
 
         return video;
     }
@@ -443,16 +426,20 @@ public class HtmlParser {
      * </div>
      */
     private static Artist parseArtist(Document doc) {
-        Element artistEl = doc.selectFirst("#player-div-wrapper .video-details-wrapper");
-        if (artistEl == null) {
-            // 备选旧版选择器
-            artistEl = doc.selectFirst(".artist-info, .channel-info, .uploader-info");
-        }
+        Element artistEl = doc.selectFirst("#player-div-wrapper > div.video-details-wrapper.desktop-inline-mobile-block > div:nth-child(1)");
         if (artistEl == null) {
             return null;
         }
 
         Artist artist = new Artist();
+
+        // 作者id
+        Element artistProfileEl = artistEl.selectFirst("a");
+        if (artistProfileEl != null) {
+            String profileUrl = artistProfileEl.attr("href");
+            artist.setId(extractUserId(profileUrl));
+            artist.setProfileUrl(profileUrl);
+        }
 
         // 作者名称: a#video-artist-name
         Element nameEl = doc.selectFirst("#video-artist-name");
@@ -461,7 +448,7 @@ public class HtmlParser {
         }
 
         // 头像: 优先取第二个img（用户头像覆盖层），否则取第一个
-        Elements avatarImgs = artistEl.select("img#video-user-avatar, img[alt]");
+        Elements avatarImgs = artistEl.select("a > div > img");
         if (avatarImgs.size() >= 2) {
             // 第二个img是实际用户头像
             String avatarSrc = avatarImgs.get(1).absUrl("src");
@@ -484,12 +471,11 @@ public class HtmlParser {
         }
 
         // 是否已订阅: #video-subscribe-form-wrapper 内按钮状态
-        Element subWrapper = artistEl.selectFirst("#video-subscribe-form-wrapper");
-        if (subWrapper != null) {
-            Element subBtn = subWrapper.selectFirst(".video-subscribe-btn.active");
-            artist.setSubscribed(subBtn != null);
+        Element subButtonElem = artistEl.selectFirst("#video-subscribe-form-wrapper > button");
+        if (subButtonElem != null) {
+            String buttonText = subButtonElem.text().trim();
+            artist.setSubscribed("订阅".equals(buttonText));
         }
-
         return artist;
     }
 
@@ -791,6 +777,22 @@ public class HtmlParser {
     }
 
     /**
+     * 从URL中提取用户id
+     * https://hanimeone.me/user/1863268 -> 1863268
+     */
+    public static String extractUserId(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        Pattern pattern = Pattern.compile("/user/(\\d+)");
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
+    /**
      * 从URL中提取指定查询参数
      */
     public static String extractQueryParam(String url, String param) {
@@ -1062,5 +1064,87 @@ public class HtmlParser {
         List<VideoInfo> videoInfos = parseVideoCards(doc);
         searchPage.setVideos(videoInfos);
         return searchPage;
+    }
+
+    public static WatchPage parseWatchPage(Document doc) {
+        WatchPage page = new WatchPage();
+
+        // 标题 - 优先中文标题
+        Element titleEl = doc.selectFirst("h3#shareBtn-title, h1.title, .video-title, h3.title, h3.video-details-wrapper");
+        if (titleEl != null) {
+            page.setTitle(titleEl.text().trim());
+        }
+
+        // 中文标题
+        Element cnTitleEl = doc.selectFirst(".video-cn-title, h4.title");
+        if (cnTitleEl != null) {
+            page.setChineseTitle(cnTitleEl.text().trim());
+        } else if (page.getTitle() != null) {
+            // 如果没有单独的中文标题字段，标题本身可能就是中文标题
+            page.setChineseTitle(page.getTitle());
+        }
+
+        // 封面URL
+        Element coverEl = doc.selectFirst("video#player");
+        if (coverEl != null) {
+            page.setCoverUrl(coverEl.attr("poster"));
+        }
+        if (page.getCoverUrl() == null || page.getCoverUrl().isEmpty()) {
+            Element coverImg = doc.selectFirst(".video-cover img, .cover img");
+            if (coverImg != null) {
+                page.setCoverUrl(coverImg.absUrl("src"));
+            }
+        }
+
+        // 简介
+        Element introEl = doc.selectFirst("#player-div-wrapper .video-caption-text, .caption-expand, .video-introduction, .description, p.text-light");
+        if (introEl != null) {
+            page.setIntroduction(introEl.text().trim());
+        }
+
+        // 观看次数 + 上传时间（同一元素 .hidden-xs 内，如 "观看次数：1.6万次  2026-05-02"）
+        Element metaEl = doc.selectFirst("#player-div-wrapper > div.video-details-wrapper.hidden-sm.hidden-md.hidden-lg.hidden-xl");
+        if (metaEl != null) {
+            String metaText = metaEl.text().trim();
+            String[] split = metaText.split(" ");
+            if (split.length > 1){
+                // 提取观看次数
+                String[] viewsStr = split[0].split("：");
+                page.setViews(viewsStr.length > 1 ? viewsStr[1] : viewsStr[0]);
+
+                // 提取上传时间
+                String uploadTime = split[1];
+                page.setUploadTime(uploadTime);
+            }
+        }
+
+        // 视频URL列表（多分辨率）
+        page.setVideoUrls(parseVideoUrls(doc));
+
+        // 标签
+        page.setTags(parseTags(doc));
+
+        // 收藏数
+        Element favEl = doc.selectFirst(".fav-count, .like-count");
+        if (favEl != null) {
+            try {
+                page.setFavTimes(Integer.parseInt(favEl.text().trim()));
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // 是否已收藏
+        Element favBtn = doc.selectFirst(".fav-button.active, .like-button.active");
+        page.setFav(favBtn != null);
+
+        // 作者信息
+        page.setArtist(parseArtist(doc));
+
+        // 播放列表
+        page.setPlaylist(parsePlaylist(doc));
+
+        // 相关影片
+        page.setRelatedHanimes(parseRelatedHanimes(doc));
+
+        return page;
     }
 }

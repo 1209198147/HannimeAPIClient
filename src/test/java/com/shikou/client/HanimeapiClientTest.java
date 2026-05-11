@@ -6,6 +6,7 @@ import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.*;
 import com.shikou.model.entities.page.HomePage;
 import com.shikou.model.entities.page.SearchPage;
+import com.shikou.model.entities.page.WatchPage;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -142,13 +143,32 @@ public class HanimeapiClientTest {
         System.out.println("中文标题: " + video.getChineseTitle());
         System.out.println("作者: " + video.getArtist().getName());
         System.out.println("简介: " + video.getIntroduction());
-        System.out.println("系列播放列表: " + video.getPlaylist().getTotal() + " 集");
         System.out.println("封面: " + video.getCoverUrl());
         System.out.println("观看次数: " + video.getViews());
         System.out.println("上传时间: " + video.getUploadTime());
         System.out.println("标签: " + video.getTags());
         if (video.getVideoUrls() != null && !video.getVideoUrls().isEmpty()) {
             System.out.println("可用画质: " + video.getVideoUrls().keySet());
+        }
+        System.out.println();
+    }
+
+    @Test
+    public void testGetWatchPage() throws HanimeException {
+        System.out.println("--- 获取观看页面 ---");
+        String videoCode = "405939";
+        WatchPage watchPage = client.getWatchPage(videoCode);
+        System.out.println("标题: " + watchPage.getTitle());
+        System.out.println("中文标题: " + watchPage.getChineseTitle());
+        System.out.println("作者: " + watchPage.getArtist().getName());
+        System.out.println("简介: " + watchPage.getIntroduction());
+        System.out.println("系列播放列表: " + watchPage.getPlaylist().getTotal() + " 集");
+        System.out.println("封面: " + watchPage.getCoverUrl());
+        System.out.println("观看次数: " + watchPage.getViews());
+        System.out.println("上传时间: " + watchPage.getUploadTime());
+        System.out.println("标签: " + watchPage.getTags());
+        if (watchPage.getVideoUrls() != null && !watchPage.getVideoUrls().isEmpty()) {
+            System.out.println("可用画质: " + watchPage.getVideoUrls().keySet());
         }
         System.out.println();
     }

@@ -8,6 +8,7 @@ import com.shikou.model.entities.*;
 import com.shikou.model.entities.page.HomePage;
 import com.shikou.model.entities.page.PreviewPage;
 import com.shikou.model.entities.page.SearchPage;
+import com.shikou.model.entities.page.WatchPage;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -147,6 +148,10 @@ public class HanimeApiClient {
 
     public SearchPage getSearchPage(SearchParams searchParams) throws HanimeException {
         return baseService.getSearchPage(searchParams);
+    }
+
+    public WatchPage getWatchPage(String videoCode) throws HanimeException {
+        return baseService.getWatchPage(videoCode);
     }
 
     public List<String> getGenreList() throws HanimeNetworkException {

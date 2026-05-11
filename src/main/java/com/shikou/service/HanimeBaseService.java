@@ -6,6 +6,7 @@ import com.shikou.model.entities.*;
 import com.shikou.model.entities.page.HomePage;
 import com.shikou.model.entities.page.PreviewPage;
 import com.shikou.model.entities.page.SearchPage;
+import com.shikou.model.entities.page.WatchPage;
 import com.shikou.parser.HtmlParser;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
@@ -371,6 +372,31 @@ public class HanimeBaseService {
             var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
             return HtmlParser.parseSearchPage(doc);
         } catch (IOException | HanimeApiException e) {
+            throw new HanimeNetworkException(e.getMessage());
+        }
+    }
+
+    public WatchPage getWatchPage(String videoCode) throws HanimeException {
+        HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "watch").newBuilder()
+                .addQueryParameter("v", videoCode)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new HanimeApiException("获取影片详情失败", response.code());
+            }
+            String html = response.body().string();
+            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+            WatchPage watchPage = HtmlParser.parseWatchPage(doc);
+            return watchPage;
+        } catch (IOException e) {
             throw new HanimeNetworkException(e.getMessage());
         }
     }

@@ -14,6 +14,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Artist {
 
+    /** 作者ID */
+    private String id;
+
+    /** 作者个人资料URL */
+    private String profileUrl;
+
     /** 作者名称 */
     private String name;
 
