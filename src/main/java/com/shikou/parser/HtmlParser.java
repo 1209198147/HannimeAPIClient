@@ -97,11 +97,7 @@ public class HtmlParser {
         // 图片: banner区域的背景图片
         Element imgEl = doc.selectFirst("div.nav-bottom-padding div.hidden-xs.hidden-sm img");
         if (imgEl != null) {
-            String src = imgEl.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = imgEl.attr("src");
-            }
-            banner.setPicUrl(src);
+            banner.setPicUrl(getAbsUrl(imgEl, "src"));
         }
 
         // videoUrl 和 videoCode: 从 script 中提取 window.open('...') 
@@ -177,11 +173,7 @@ public class HtmlParser {
         // 解析封面图
         Element coverEl = doc.selectFirst("#content-div > div.row.no-gutter.video-show-width.download-panel > div.col-md-12 > div > div > img");
         if (coverEl != null) {
-            String src = coverEl.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = coverEl.attr("src");
-            }
-            downloadInfo.setCoverImg(src);
+            downloadInfo.setCoverImg(getAbsUrl(coverEl, "src"));
         }
             
         // 解析下载项列表
@@ -231,10 +223,10 @@ public class HtmlParser {
                 Element linkEl = row.selectFirst("td:nth-child(5) a");
                 if (linkEl != null) {
                     String href = linkEl.attr("data-url");
-                    if (href == null || href.isEmpty()) {
+                    if (StringUtils.isEmpty(href)) {
                         href = linkEl.attr("abs:href");
                     }
-                    if (href == null || href.isEmpty()) {
+                    if (StringUtils.isEmpty(href)) {
                         href = linkEl.attr("href");
                     }
                     item.setDownloadUrl(href);
@@ -286,7 +278,7 @@ public class HtmlParser {
         if (coverEl != null) {
             video.setCoverUrl(coverEl.attr("poster"));
         }
-        if (video.getCoverUrl() == null || video.getCoverUrl().isEmpty()) {
+        if (StringUtils.isEmpty(video.getCoverUrl())) {
             Element coverImg = doc.selectFirst(".video-cover img, .cover img");
             if (coverImg != null) {
                 video.setCoverUrl(coverImg.absUrl("src"));
@@ -340,7 +332,7 @@ public class HtmlParser {
             for (Element source : sources) {
                 String quality = source.attr("size") + "P";
                 String url = source.absUrl("src");
-                if (url.isEmpty()) {
+                if (StringUtils.isEmpty(url)) {
                     url = source.attr("src");
                 }
                 String mimeType = source.attr("type");
@@ -378,7 +370,7 @@ public class HtmlParser {
      * 根据MIME类型获取文件后缀
      */
     public static String getFileSuffix(String mimeType) {
-        if (mimeType == null || mimeType.isEmpty()) {
+        if (StringUtils.isEmpty(mimeType)) {
             return "mp4";
         }
         String lower = mimeType.toLowerCase();
@@ -451,17 +443,9 @@ public class HtmlParser {
         Elements avatarImgs = artistEl.select("a > div > img");
         if (avatarImgs.size() >= 2) {
             // 第二个img是实际用户头像
-            String avatarSrc = avatarImgs.get(1).absUrl("src");
-            if (avatarSrc == null || avatarSrc.isEmpty()) {
-                avatarSrc = avatarImgs.get(1).attr("src");
-            }
-            artist.setAvatarUrl(avatarSrc);
+            artist.setAvatarUrl(getAbsUrl(avatarImgs.get(1), "src"));
         } else if (avatarImgs.size() == 1) {
-            String avatarSrc = avatarImgs.get(0).absUrl("src");
-            if (avatarSrc == null || avatarSrc.isEmpty()) {
-                avatarSrc = avatarImgs.get(0).attr("src");
-            }
-            artist.setAvatarUrl(avatarSrc);
+            artist.setAvatarUrl(getAbsUrl(avatarImgs.get(0), "src"));
         }
 
         // 类型/Genre: a[href*=search?genre=]
@@ -546,7 +530,7 @@ public class HtmlParser {
 
             Element coverEl = item.selectFirst("img");
             if (coverEl != null) {
-                info.setCoverUrl(coverEl.absUrl("src"));
+                info.setCoverUrl(getAbsUrl(coverEl, "src"));
             }
 
             Element introEl = item.selectFirst("p, .description");
@@ -679,7 +663,7 @@ public class HtmlParser {
         Element watchLink = card.selectFirst("a[href*=/watch]");
         if (watchLink != null) {
             String href = watchLink.attr("abs:href");
-            if (href == null || href.isEmpty()) {
+            if (StringUtils.isEmpty(href)) {
                 href = watchLink.attr("href");
             }
             info.setVideoUrl(href);
@@ -704,22 +688,13 @@ public class HtmlParser {
         Elements imgs = mobilePanelCardElem.select("img");
         if (imgs.size() >= 2) {
             Element thumbImg = imgs.get(1);
-            String src = thumbImg.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = thumbImg.attr("src");
-            }
-            info.setCoverUrl(src);
+            info.setCoverUrl(getAbsUrl(thumbImg, "src"));
             String alt = thumbImg.attr("alt");
-            if (alt != null && !alt.isEmpty()) {
+            if (StringUtils.isNotEmpty(alt)) {
                 info.setTitle(alt.trim());
             }
         } else if (imgs.size() == 1) {
-            Element img = imgs.get(0);
-            String src = img.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = img.attr("src");
-            }
-            info.setCoverUrl(src);
+            info.setCoverUrl(getAbsUrl(imgs.get(0), "src"));
         }
 
         // 时长: .card-playlist-small
@@ -738,11 +713,7 @@ public class HtmlParser {
         Element uploaderEl = mobilePanelCardElem.selectFirst("a.card-mobile-user");
         if (uploaderEl != null) {
             info.setUploader(uploaderEl.text().trim());
-            String uploaderHref = uploaderEl.attr("abs:href");
-            if (uploaderHref == null || uploaderHref.isEmpty()) {
-                uploaderHref = uploaderEl.attr("href");
-            }
-            info.setUploaderUrl(uploaderHref);
+            info.setUploaderUrl(getAbsUrl(uploaderEl, "href"));
         }
 
         // 统计信息: .card-playlist-large 列表
@@ -770,7 +741,7 @@ public class HtmlParser {
      * /watch?v=12345 -> 12345
      */
     public static String extractVideoCode(String url) {
-        if (url == null || url.isEmpty()) {
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
         return extractQueryParam(url, "v");
@@ -781,7 +752,7 @@ public class HtmlParser {
      * https://hanimeone.me/user/1863268 -> 1863268
      */
     public static String extractUserId(String url) {
-        if (url == null || url.isEmpty()) {
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
         Pattern pattern = Pattern.compile("/user/(\\d+)");
@@ -796,7 +767,7 @@ public class HtmlParser {
      * 从URL中提取指定查询参数
      */
     public static String extractQueryParam(String url, String param) {
-        if (url == null || url.isEmpty()) {
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
         // 处理相对URL
@@ -874,7 +845,7 @@ public class HtmlParser {
         }
         if (linkEl != null) {
             String href = linkEl.attr("abs:href");
-            if (href == null || href.isEmpty()) {
+            if (StringUtils.isEmpty(href)) {
                 href = linkEl.attr("href");
             }
             info.setVideoUrl(href);
@@ -887,11 +858,7 @@ public class HtmlParser {
             imgEl = card.selectFirst("img");
         }
         if (imgEl != null) {
-            String src = imgEl.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = imgEl.attr("src");
-            }
-            info.setCoverUrl(src);
+            info.setCoverUrl(getAbsUrl(imgEl, "src"));
         }
 
         // 时长
@@ -955,10 +922,7 @@ public class HtmlParser {
             linkEl = card.parent();
         }
         if (linkEl != null) {
-            String href = linkEl.attr("abs:href");
-            if (href == null || href.isEmpty()) {
-                href = linkEl.attr("href");
-            }
+            String href = getAbsUrl(linkEl, "href");
             info.setVideoUrl(href);
             info.setVideoCode(extractVideoCode(href));
         }
@@ -966,14 +930,10 @@ public class HtmlParser {
         // 封面图
         Element imgEl = card.selectFirst("img");
         if (imgEl != null) {
-            String src = imgEl.attr("abs:src");
-            if (src == null || src.isEmpty()) {
-                src = imgEl.attr("src");
-            }
-            info.setCoverUrl(src);
+            info.setCoverUrl(getAbsUrl(imgEl, "src"));
             // alt 作为标题备选
             String alt = imgEl.attr("alt");
-            if (alt != null && !alt.isEmpty()) {
+            if (StringUtils.isNotEmpty(alt)) {
                 info.setTitle(alt.trim());
             }
         }
@@ -988,20 +948,7 @@ public class HtmlParser {
     }
 
     public static List<String> parseGenreList(Document doc) {
-        List<String> genres = new ArrayList<>();
-        Element genreModalElem = doc.selectFirst("#genre-modal > div > div > div.modal-body");
-        if (genreModalElem != null) {
-            Elements genreElems = genreModalElem.select(".hentai-sort-options");
-            for (Element genreElem : genreElems) {
-                if(genreElem != null) {
-                    String value = genreElem.text().trim();
-                    if(StringUtils.isNotBlank(value)) {
-                        genres.add(value);
-                    }
-                }
-            }
-        }
-        return genres;
+        return parseModalOptions(doc, "#genre-modal");
     }
 
     public static Map<String, List<String>> parseTagsMap(Document doc) {
@@ -1034,20 +981,7 @@ public class HtmlParser {
     }
 
     public static List<String> parseSortTypeList(Document doc) {
-        List<String> sortTypes = new ArrayList<>();
-        Element sortModalElem = doc.selectFirst("#sort-modal > div > div > div.modal-body");
-        if (sortModalElem != null) {
-            Elements sortElems =sortModalElem.select(".hentai-sort-options");
-            for (Element sortElem : sortElems) {
-                if(sortElem != null) {
-                    String value = sortElem.text().trim();
-                    if(StringUtils.isNotBlank(value)) {
-                        sortTypes.add(value);
-                    }
-                }
-            }
-        }
-        return sortTypes;
+        return parseModalOptions(doc, "#sort-modal");
     }
 
     public static SearchPage parseSearchPage(Document doc) {
@@ -1089,7 +1023,7 @@ public class HtmlParser {
         if (coverEl != null) {
             page.setCoverUrl(coverEl.attr("poster"));
         }
-        if (page.getCoverUrl() == null || page.getCoverUrl().isEmpty()) {
+        if (StringUtils.isEmpty(page.getCoverUrl())) {
             Element coverImg = doc.selectFirst(".video-cover img, .cover img");
             if (coverImg != null) {
                 page.setCoverUrl(coverImg.absUrl("src"));
@@ -1146,5 +1080,38 @@ public class HtmlParser {
         page.setRelatedHanimes(parseRelatedHanimes(doc));
 
         return page;
+    }
+
+    // ======================== 工具方法 ========================
+
+    /**
+     * 获取元素的绝对URL属性值，支持abs:前缀回退
+     */
+    private static String getAbsUrl(Element el, String attr) {
+        String value = el.attr("abs:" + attr);
+        if (StringUtils.isEmpty(value)) {
+            value = el.attr(attr);
+        }
+        return StringUtils.isEmpty(value) ? null : value;
+    }
+
+    /**
+     * 解析Modal弹窗中的选项列表（如类型、排序方式）
+     */
+    private static List<String> parseModalOptions(Document doc, String modalSelector) {
+        List<String> options = new ArrayList<>();
+        Element modalElem = doc.selectFirst(modalSelector + " > div > div > div.modal-body");
+        if (modalElem != null) {
+            Elements elems = modalElem.select(".hentai-sort-options");
+            for (Element elem : elems) {
+                if (elem != null) {
+                    String value = elem.text().trim();
+                    if (StringUtils.isNotBlank(value)) {
+                        options.add(value);
+                    }
+                }
+            }
+        }
+        return options;
     }
 }

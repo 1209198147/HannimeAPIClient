@@ -1,6 +1,7 @@
 package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
+import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.*;
@@ -11,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,7 @@ public class HanimeapiClientTest {
 
 
     @Test
-    public void testHomePage() throws HanimeException {
+    public void testHomePage() throws Exception {
         System.out.println("--- 获取首页 ---");
         HomePage homePage = client.getHomePage();
         if (homePage.getSections() != null) {
@@ -51,7 +53,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testSearchPage() throws HanimeException {
+    public void testSearchPage() throws Exception {
         System.out.println("--- 获取搜索页面 ---");
         List<String> tags = List.of("中文字幕", "無碼", "同人作品");
         SearchParams searchParams = SearchParams.builder()
@@ -119,7 +121,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testSearch() throws HanimeException {
+    public void testSearch() throws Exception {
         System.out.println("--- 搜索影片 ---");
         SearchParams searchParams = SearchParams.builder()
                 .query("女仆")
@@ -135,7 +137,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testVideoDetail() throws HanimeException {
+    public void testVideoDetail() throws Exception {
         System.out.println("--- 获取影片详情 ---");
         String videoCode = "405939";
         HanimeVideo video = client.getVideoDetail(videoCode);
@@ -154,7 +156,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testGetWatchPage() throws HanimeException {
+    public void testGetWatchPage() throws Exception {
         System.out.println("--- 获取观看页面 ---");
         String videoCode = "405939";
         WatchPage watchPage = client.getWatchPage(videoCode);
@@ -174,7 +176,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testDownloadInfo() throws HanimeException {
+    public void testDownloadInfo() throws Exception {
         DownloadInfo downloadInfo = client.getDownloadInfo("405939");
 
         System.out.println("标题: " + downloadInfo.getTitle());
@@ -203,7 +205,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testGetGenreList() throws HanimeNetworkException {
+    public void testGetGenreList() throws Exception {
         List<String> genreList = client.getGenreList();
         System.out.println("类型大小: " + genreList.size());
         for (String genre : genreList) {
@@ -212,7 +214,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testGetTagsMap() throws HanimeNetworkException {
+    public void testGetTagsMap() throws Exception {
         Map<String, List<String>> tagsMap = client.getTagsMap();
         System.out.println("类型大小: " + tagsMap.size());
         for (Map.Entry<String, List<String>> tag : tagsMap.entrySet()) {
@@ -224,7 +226,7 @@ public class HanimeapiClientTest {
     }
 
     @Test
-    public void testGetSortTypeList() throws HanimeNetworkException {
+    public void testGetSortTypeList() throws Exception {
         List<String> sortTypeList = client.getSortTypeList();
         System.out.println("类型大小: " + sortTypeList.size());
         for (String sort : sortTypeList) {

@@ -9,6 +9,7 @@ import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.Comment;
+import com.shikou.util.HanimeHttpExecutor;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -50,15 +51,8 @@ public class HanimeCommentService {
                 .addHeader("Referer", config.getBaseUrl())
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null) {
-                throw new HanimeApiException("获取评论失败: " + response.code());
-            }
-            String json = response.body().string();
-            return parseCommentsFromJson(json);
-        } catch (IOException e) {
-            throw new HanimeNetworkException(e.getMessage());
-        }
+        String json = HanimeHttpExecutor.executeForString(client, request, "获取评论失败");
+        return parseCommentsFromJson(json);
     }
 
     /**
@@ -75,7 +69,7 @@ public class HanimeCommentService {
      * @param commentId 评论ID
      * @return 回复列表
      */
-    public List<Comment> getReplies(String commentId) throws IOException {
+    public List<Comment> getReplies(String commentId) throws HanimeException {
         HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "loadReplies").newBuilder()
                 .addQueryParameter("id", commentId)
                 .build();
@@ -86,13 +80,8 @@ public class HanimeCommentService {
                 .addHeader("Referer", config.getBaseUrl())
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null) {
-                throw new IOException("获取回复失败: " + response.code());
-            }
-            String json = response.body().string();
-            return parseCommentsFromJson(json);
-        }
+        String json = HanimeHttpExecutor.executeForString(client, request, "获取回复失败");
+        return parseCommentsFromJson(json);
     }
 
     // ======================== 发表评论 ========================
@@ -101,7 +90,7 @@ public class HanimeCommentService {
      * 发表评论
      */
     public boolean createComment(String csrfToken, String userId, String type,
-                                  String foreignId, String text) throws IOException {
+                                  String foreignId, String text) throws HanimeException {
         FormBody formBody = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("comment-user-id", userId)
@@ -122,6 +111,8 @@ public class HanimeCommentService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        } catch (IOException e) {
+            throw new HanimeNetworkException("发表评论失败: " + e.getMessage());
         }
     }
 
@@ -130,7 +121,7 @@ public class HanimeCommentService {
     /**
      * 回复评论
      */
-    public boolean replyComment(String csrfToken, String commentId, String text) throws IOException {
+    public boolean replyComment(String csrfToken, String commentId, String text) throws HanimeException {
         FormBody formBody = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("reply-comment-id", commentId)
@@ -147,6 +138,8 @@ public class HanimeCommentService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        } catch (IOException e) {
+            throw new HanimeNetworkException("回复评论失败: " + e.getMessage());
         }
     }
 
@@ -157,7 +150,7 @@ public class HanimeCommentService {
      */
     public boolean likeComment(String csrfToken, String foreignType, String foreignId,
                                 int isPositive, String userId, int likesCount,
-                                int likesSum, int likeStatus, int unlikeStatus) throws IOException {
+                                int likesSum, int likeStatus, int unlikeStatus) throws HanimeException {
         FormBody.Builder formBuilder = new FormBody.Builder()
                 .add("_token", csrfToken)
                 .add("foreign_type", foreignType)
@@ -184,6 +177,8 @@ public class HanimeCommentService {
 
         try (Response response = client.newCall(request).execute()) {
             return response.isSuccessful();
+        } catch (IOException e) {
+            throw new HanimeNetworkException("点赞评论失败: " + e.getMessage());
         }
     }
 

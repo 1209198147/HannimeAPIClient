@@ -40,7 +40,7 @@ public class VideoDownloader {
     /**
      * 下载文件（无进度回调）
      */
-    public void download(String url, File outputFile) throws HanimeException, IOException {
+    public void download(String url, File outputFile) throws HanimeApiException, HanimeNetworkException, IOException {
         download(url, outputFile, null);
     }
 
@@ -49,11 +49,12 @@ public class VideoDownloader {
      * @param url         下载URL
      * @param outputFile  本地输出文件
      * @param listener    进度监听器（可为null）
-     * @throws HanimeException 业务异常
+     * @throws HanimeApiException 业务异常
+     * @throws HanimeNetworkException 网络异常
      * @throws IOException     网络或IO异常
      */
     public void download(String url, File outputFile, ProgressListener listener)
-            throws HanimeException, IOException {
+            throws HanimeApiException, HanimeNetworkException, IOException {
 
         // 1. 获取服务器文件总大小
         long contentLength = getContentLength(url);
@@ -154,7 +155,7 @@ public class VideoDownloader {
         }
     }
 
-    private void simpleDownload(String url, File outputFile, ProgressListener listener) throws HanimeException, IOException {
+    private void simpleDownload(String url, File outputFile, ProgressListener listener) throws HanimeApiException, HanimeNetworkException, IOException {
         File parentFile = outputFile.getParentFile();
         if (parentFile != null && !parentFile.exists()) {
             parentFile.mkdirs();
@@ -169,7 +170,7 @@ public class VideoDownloader {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                throw new HanimeApiException("视频不存在");
+                throw new HanimeApiException("视频不存在或链接失效，可以尝试通过videoCode下载");
             }
 
             long contentLength = response.body().contentLength();

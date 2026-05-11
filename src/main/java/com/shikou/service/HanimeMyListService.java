@@ -7,6 +7,7 @@ import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.VideoInfo;
 import com.shikou.model.entities.PlaylistItem;
 import com.shikou.parser.HtmlParser;
+import com.shikou.util.HanimeHttpExecutor;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class HanimeMyListService {
      * @param page 页码，从1开始
      * @param listType 列表类型: "WL"(稍后观看), "LL"(喜欢的影片), "SL"(订阅), 或自定义列表代码
      */
-    public List<VideoInfo> getPlaylist(int page, String listType) throws HanimeException {
+    public List<VideoInfo> getPlaylist(int page, String listType) throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = HttpUrl.parse(config.getBaseUrl() + "playlist").newBuilder()
                 .addQueryParameter("page", String.valueOf(page))
                 .addQueryParameter("list", listType)
@@ -44,49 +45,35 @@ public class HanimeMyListService {
                 .addHeader("Referer", config.getBaseUrl())
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null) {
-                throw new HanimeApiException("获取播放列表失败: " + response.code());
-            }
-            String html = response.body().string();
-            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
-            return HtmlParser.parseVideoCards(doc);
-        }catch (IOException e) {
-            throw new HanimeNetworkException(e.getMessage());
-        }
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseVideoCards(doc);
     }
 
-    public List<VideoInfo> getWatchLater(int page) throws HanimeException {
+    public List<VideoInfo> getWatchLater(int page) throws HanimeApiException, HanimeNetworkException {
         return getPlaylist(page, "WL");
     }
 
-    public List<VideoInfo> getLikedVideos(int page) throws HanimeException {
+    public List<VideoInfo> getLikedVideos(int page) throws HanimeApiException, HanimeNetworkException {
         return getPlaylist(page, "LL");
     }
 
-    public List<VideoInfo> getSubscriptions(int page) throws HanimeException {
+    public List<VideoInfo> getSubscriptions(int page) throws HanimeApiException, HanimeNetworkException {
         return getPlaylist(page, "SL");
     }
 
     // ======================== 获取所有播放列表 ========================
 
-    public List<PlaylistItem> getAllPlaylists() throws HanimeException {
+    public List<PlaylistItem> getAllPlaylists() throws HanimeApiException, HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "playlists")
                 .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("Referer", config.getBaseUrl())
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null) {
-                throw new HanimeApiException("获取播放列表失败: " + response.code());
-            }
-            String html = response.body().string();
-            var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
-            return HtmlParser.parsePlaylistItems(doc);
-        }catch (IOException e) {
-            throw new HanimeNetworkException(e.getMessage());
-        }
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parsePlaylistItems(doc);
     }
 
     // ======================== 删除列表项 ========================

@@ -2,8 +2,10 @@ package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.HanimeApiException;
+import com.shikou.exception.HanimeAuthenticationException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
+import com.shikou.exception.HanimeValidationException;
 import com.shikou.model.entities.*;
 import com.shikou.model.entities.page.HomePage;
 import com.shikou.model.entities.page.PreviewPage;
@@ -11,6 +13,7 @@ import com.shikou.model.entities.page.SearchPage;
 import com.shikou.model.entities.page.WatchPage;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -138,57 +141,57 @@ public class HanimeApiClient {
      * @return
      * @throws HanimeException
      */
-    public DownloadInfo getDownloadInfo(String videoCode) throws HanimeException {
+    public DownloadInfo getDownloadInfo(String videoCode) throws HanimeApiException, HanimeNetworkException {
         return baseService.getDownloadInfo(videoCode);
     }
 
-    public HomePage getHomePage() throws HanimeException {
+    public HomePage getHomePage() throws HanimeApiException, HanimeNetworkException {
         return baseService.getHomePage();
     }
 
-    public SearchPage getSearchPage(SearchParams searchParams) throws HanimeException {
+    public SearchPage getSearchPage(SearchParams searchParams) throws HanimeApiException, HanimeNetworkException {
         return baseService.getSearchPage(searchParams);
     }
 
-    public WatchPage getWatchPage(String videoCode) throws HanimeException {
+    public WatchPage getWatchPage(String videoCode) throws HanimeApiException, HanimeNetworkException {
         return baseService.getWatchPage(videoCode);
     }
 
-    public List<String> getGenreList() throws HanimeNetworkException {
+    public List<String> getGenreList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getGenreList();
     }
 
-    public Map<String, List<String>> getTagsMap() throws HanimeNetworkException {
+    public Map<String, List<String>> getTagsMap() throws HanimeApiException, HanimeNetworkException {
         return baseService.getTagsMap();
     }
 
-    public List<String> getSortTypeList() throws HanimeNetworkException {
+    public List<String> getSortTypeList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getSortTypeList();
     }
 
-    public List<VideoInfo> search(String query) throws HanimeException {
+    public List<VideoInfo> search(String query) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(query);
     }
 
-    public List<VideoInfo> search(SearchParams params) throws HanimeException {
+    public List<VideoInfo> search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(params);
     }
 
-    public HanimeVideo getVideoDetail(String videoCode) throws HanimeException {
+    public HanimeVideo getVideoDetail(String videoCode) throws HanimeApiException, HanimeNetworkException {
         return baseService.getVideoDetail(videoCode);
     }
 
-    public PreviewPage getPreviews(String date) throws HanimeException {
+    public PreviewPage getPreviews(String date) throws HanimeApiException, HanimeNetworkException {
         return baseService.getPreviews(date);
     }
 
-    public boolean login(String email, String password) throws HanimeException {
+    public boolean login(String email, String password) throws HanimeApiException, HanimeNetworkException, HanimeAuthenticationException {
         String csrfToken = baseService.login(email, password);
         this.csrfToken = csrfToken;
-        return csrfToken != null && !csrfToken.isEmpty();
+        return StringUtils.isNotEmpty(csrfToken);
     }
 
-    public boolean isLoggedIn() throws HanimeException {
+    public boolean isLoggedIn() throws HanimeNetworkException {
         return baseService.verifyLogin();
     }
 
@@ -202,7 +205,7 @@ public class HanimeApiClient {
      * @throws HanimeException
      * @throws IOException
      */
-    public void download(String videoCode, File outputFile) throws HanimeException, IOException {
+    public void download(String videoCode, File outputFile) throws HanimeApiException, HanimeNetworkException, IOException {
         download(videoCode, outputFile, null);
     }
 
@@ -214,16 +217,9 @@ public class HanimeApiClient {
      * @throws HanimeException
      * @throws IOException
      */
-    public void download(String videoCode, File outputFile, VideoDownloader.ProgressListener listener) throws HanimeException, IOException {
-        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
-        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
-            throw new HanimeApiException("未找到视频URL");
-        }
-        VideoQuality quality = selectBestQuality(downloadInfo.getDownloadItems());
-        if (quality == null) {
-            throw new HanimeApiException("无法获取视频的下载链接");
-        }
-        videoDownloader.download(quality.getUrl(), outputFile, listener);
+    public void download(String videoCode, File outputFile, VideoDownloader.ProgressListener listener) throws HanimeApiException, HanimeNetworkException, IOException {
+        String url = resolveDownloadUrl(videoCode, null);
+        videoDownloader.download(url, outputFile, listener);
     }
 
     /**
@@ -235,15 +231,8 @@ public class HanimeApiClient {
      * @throws HanimeException
      * @throws IOException
      */
-    public void download(String videoCode, String quality, File outputFile) throws HanimeException, IOException {
-        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
-        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
-            throw new HanimeApiException("未找到视频URL");
-        }
-        String url = getQualityUrl(quality, downloadInfo);
-        if(url == null || !url.startsWith("http")) {
-            throw new HanimeApiException("无法获取视频的下载链接");
-        }
+    public void download(String videoCode, String quality, File outputFile) throws HanimeApiException, HanimeNetworkException, IOException {
+        String url = resolveDownloadUrl(videoCode, quality);
         videoDownloader.download(url, outputFile);
     }
 
@@ -258,15 +247,8 @@ public class HanimeApiClient {
      * @throws IOException
      */
     public void download(String videoCode, String quality, File outputFile,
-                          VideoDownloader.ProgressListener listener) throws HanimeException, IOException {
-        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
-        if (downloadInfo.getDownloadItems() == null || downloadInfo.getDownloadItems().isEmpty()) {
-            throw new HanimeApiException("未找到视频URL");
-        }
-        String url = getQualityUrl(quality, downloadInfo);
-        if(url == null || !url.startsWith("http")) {
-            throw new HanimeApiException("无法获取视频的下载链接");
-        }
+                          VideoDownloader.ProgressListener listener) throws HanimeApiException, HanimeNetworkException, IOException {
+        String url = resolveDownloadUrl(videoCode, quality);
         videoDownloader.download(url, outputFile, listener);
     }
 
@@ -279,7 +261,7 @@ public class HanimeApiClient {
      * @throws IOException
      */
     public void download(DownloadArgs args,
-                         VideoDownloader.ProgressListener listener) throws HanimeException, IOException {
+                         VideoDownloader.ProgressListener listener) throws HanimeApiException, HanimeNetworkException, IOException {
         if (!vaildDownloadArgs(args)){
             return;
         }
@@ -329,6 +311,28 @@ public class HanimeApiClient {
         return true;
     }
 
+    /**
+     * 解析下载URL（根据画质选择或自动选择最佳画质）
+     */
+    private String resolveDownloadUrl(String videoCode, String quality) throws HanimeApiException, HanimeNetworkException {
+        DownloadInfo downloadInfo = baseService.getDownloadInfo(videoCode);
+        if (CollectionUtils.isEmpty(downloadInfo.getDownloadItems())) {
+            throw new HanimeApiException("未找到视频URL");
+        }
+        if (StringUtils.isNotEmpty(quality)) {
+            String url = getQualityUrl(quality, downloadInfo);
+            if (StringUtils.isEmpty(url) || !url.startsWith("http")) {
+                throw new HanimeApiException("无法获取视频的下载链接");
+            }
+            return url;
+        }
+        VideoQuality best = selectBestQuality(downloadInfo.getDownloadItems());
+        if (best == null) {
+            throw new HanimeApiException("无法获取视频的下载链接");
+        }
+        return best.getUrl();
+    }
+
 
     private String getQualityUrl(String quality, DownloadInfo downloadInfo){
         Map<String, String> qualityUrlMap = downloadInfo.getDownloadItems().stream()
@@ -338,27 +342,11 @@ public class HanimeApiClient {
 
     /**
      * 选择最佳质量的视频
-     * @param downloadItems
-     * @return
      */
     private VideoQuality selectBestQuality(List<DownloadItem> downloadItems) {
-        return selectBestQuality(downloadItems, null);
-    }
-
-    /**
-     * 选择最佳质量的视频
-     * @param downloadItems
-     * @param quality 如果存在则返回这个分辨率，如果没有则返回最好的一个
-     * @return
-     */
-    private VideoQuality selectBestQuality(List<DownloadItem> downloadItems, String quality) {
         String[] priorities = {"1080P", "720P", "480P", "240P", "Unknown"};
         Map<String, VideoQuality> videoUrls = downloadItems.stream()
                 .collect(Collectors.toMap(DownloadItem::getQuality, item -> new VideoQuality(item.getQuality(), item.getDownloadUrl(), item.getItemType())));
-
-        if (videoUrls.containsKey(quality)){
-            return videoUrls.get(quality);
-        }
 
         for (String p : priorities) {
             VideoQuality item = videoUrls.get(p);
@@ -366,8 +354,7 @@ public class HanimeApiClient {
                 return item;
             }
         }
-        VideoQuality defaultValue = videoUrls.values().iterator().next();
-        return defaultValue;
+        return videoUrls.values().iterator().next();
     }
 
     // ======================== 其他 ========================

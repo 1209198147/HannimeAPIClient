@@ -1,6 +1,9 @@
 package com.shikou.exception;
 
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
 
 /**
  * 异常工具类 - 提供异常处理的辅助方法
@@ -8,46 +11,48 @@ import okhttp3.Response;
 public class ExceptionUtils {
     
     /**
-     * 根据HTTP响应状态码创建相应的异常
+     * 将HTTP状态码映射为对应的错误信息
      *
-     * @param response HTTP响应
-     * @param message  错误消息
-     * @return 对应的异常实例
+     * @param code HTTP状态码
+     * @return 对应的错误信息
      */
-    public static HanimeException fromResponse(Response response, String message) {
-        if (response == null) {
-            return new HanimeNetworkException("网络响应为空", message);
-        }
-        
-        int code = response.code();
+    public static String mapHttpCodeToMessage(int code) {
         switch (code) {
-            case 400:
-                return new HanimeValidationException("请求参数错误", code);
-            case 401:
-                return new HanimeAuthenticationException("未授权访问", code);
-            case 403:
-                return new HanimeAuthenticationException("禁止访问", code);
-            case 404:
-                return new HanimeApiException("资源不存在", code);
-            case 429:
-                return new HanimeApiException("请求过于频繁", code);
-            case 500:
-                return new HanimeApiException("服务器内部错误", code);
-            case 502:
-                return new HanimeApiException("网关错误", code);
-            case 503:
-                return new HanimeApiException("服务不可用", code);
-            case 504:
-                return new HanimeApiException("网关超时", code);
+            case 400: return "请求参数错误";
+            case 401: return "未授权访问";
+            case 403: return "禁止访问";
+            case 404: return "资源不存在";
+            case 429: return "请求过于频繁";
+            case 500: return "服务器内部错误";
+            case 502: return "网关错误";
+            case 503: return "服务不可用";
+            case 504: return "网关超时";
             default:
                 if (code >= 400 && code < 500) {
-                    return new HanimeApiException("客户端错误", code);
+                    return "客户端错误";
                 } else if (code >= 500 && code < 600) {
-                    return new HanimeApiException("服务器错误", code);
-                } else {
-                    return new HanimeNetworkException("网络错误", code);
+                    return "服务器错误";
                 }
+                return "网络错误";
         }
+    }
+
+    /**
+     * 根据HTTP响应状态码创建相应的异常
+     * <p>
+     * 如果 {@code message} 为空，则使用HTTP状态码映射的默认错误信息；
+     * 否则使用传入的 {@code message}
+     * </p>
+     *
+     * @param response HTTP响应
+     * @param message  自定义错误消息，可为空
+     */
+    public static void fromResponse(Response response, String message) throws HanimeApiException {
+        int code = response.code();
+        if(StringUtils.isBlank(message)){
+            message = mapHttpCodeToMessage(code);
+        }
+        throw new HanimeApiException(message, code);
     }
     
     /**
@@ -57,22 +62,21 @@ public class ExceptionUtils {
      * @param context     上下文信息
      * @return HanimeException
      */
-    public static HanimeException fromIOException(java.io.IOException ioException, String context) {
-        String message = ioException.getMessage();
-        if (message == null || message.trim().isEmpty()) {
-            message = "IO操作失败";
-        }
-        
+    public static void fromIOException(IOException ioException, String context) throws HanimeNetworkException, IOException {
         // 检查是否是网络连接相关的异常
-        String lowerMessage = message.toLowerCase();
-        if (lowerMessage.contains("connection refused") || 
-            lowerMessage.contains("timeout") || 
-            lowerMessage.contains("network") || 
-            lowerMessage.contains("socket") || 
-            lowerMessage.contains("connect")) {
-            return new HanimeNetworkException(context + ": " + message, ioException);
+        String message = ioException.getMessage();
+        if (StringUtils.isBlank(message)) {
+            message = "未知错误";
         }
-        
-        return new HanimeApiException(context + ": " + message, ioException);
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("connection refused") ||
+                lowerMessage.contains("timeout") ||
+                lowerMessage.contains("network") ||
+                lowerMessage.contains("socket") ||
+                lowerMessage.contains("connect")) {
+            throw new HanimeNetworkException(context + ": " + message, ioException);
+        }
+        throw ioException;
     }
 }
