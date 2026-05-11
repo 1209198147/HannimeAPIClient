@@ -3,10 +3,7 @@ package com.shikou.service;
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.*;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.HomePage;
-import com.shikou.model.entities.page.PreviewPage;
-import com.shikou.model.entities.page.SearchPage;
-import com.shikou.model.entities.page.WatchPage;
+import com.shikou.model.entities.page.*;
 import com.shikou.parser.HtmlParser;
 import com.shikou.util.HanimeHttpExecutor;
 import okhttp3.*;
@@ -345,5 +342,124 @@ public class HanimeBaseService {
         return Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "watch")).newBuilder()
                 .addQueryParameter("v", videoCode)
                 .build();
+    }
+
+    @NotNull
+    private HttpUrl getUserUrl(String userId) {
+        return Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + userId)).newBuilder()
+                .build();
+    }
+
+    @NotNull
+    private HttpUrl getUserUploadedUrl(UserParam param) {
+        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getUserId() + "/uploaded")).newBuilder()
+                .addQueryParameter("page", String.valueOf(param.getPage()));
+
+        if(StringUtils.isNotBlank(param.getSort())){
+            builder.addQueryParameter("sort", param.getSort());
+        }
+
+        return builder.build();
+    }
+
+    @NotNull
+    private HttpUrl getUserPlaylistsUrl(UserParam param) {
+        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getUserId() + "/playlists")).newBuilder()
+                .addQueryParameter("page", String.valueOf(param.getPage()));
+
+        if(StringUtils.isNotBlank(param.getSort())){
+            builder.addQueryParameter("sort", param.getSort());
+        }
+
+        return builder.build();
+    }
+
+
+
+    public UserPage getUserPage(String userId) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserUrl(userId);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseUserPage(doc);
+    }
+
+    public UserUploadedPage getUserUploadedPage(UserParam param) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserUploadedUrl(param);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户上传视频页失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseUserUploadedPage(doc);
+    }
+
+    public UserPlaylistsPage getUserPlaylistsPage(UserParam param) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserPlaylistsUrl(param);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户上传视频页失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseUserPlaylistsPage(doc);
+    }
+
+    public Profile getProfile(String userId) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserUrl(userId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseProfile(doc);
+    }
+
+    public List<VideoInfo> getUploadVideos(UserParam param) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserUploadedUrl(param);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parseVideoList(doc);
+    }
+
+    public List<PlaylistItem> getPlaylists(UserParam param) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getUserPlaylistsUrl(param);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parsePlaylistItems(doc);
     }
 }

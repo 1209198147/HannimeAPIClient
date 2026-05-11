@@ -1,10 +1,8 @@
 package com.shikou.parser;
 
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.HomePage;
-import com.shikou.model.entities.page.PreviewPage;
-import com.shikou.model.entities.page.SearchPage;
-import com.shikou.model.entities.page.WatchPage;
+import com.shikou.model.entities.page.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -565,36 +563,74 @@ public class HtmlParser {
      * 从播放列表页面HTML解析PlaylistItem列表
      */
     public static List<PlaylistItem> parsePlaylistItems(Document doc) {
-        List<PlaylistItem> playlists = new ArrayList<>();
-        Elements items = doc.select(".playlist-item, .playlist-card");
-        for (Element item : items) {
-            PlaylistItem pl = new PlaylistItem();
+        List<PlaylistItem> list = new ArrayList<>();
 
-            Element titleEl = item.selectFirst(".title, h3, h4");
-            if (titleEl != null) {
-                pl.setTitle(titleEl.text().trim());
+        // 解析 .horizontal-card
+        Elements horizontalCards = doc.select("div.horizontal-card");
+        for (Element card : horizontalCards) {
+            PlaylistItem item = parseSinglePlaylistCard(card);
+            if (item != null && item.getListCode() != null) {
+                list.add(item);
             }
-
-            Element codeEl = item.selectFirst("a[href*=/playlist], input[name=list_code]");
-            if (codeEl != null) {
-                String href = codeEl.attr("href");
-                if (href.contains("list=")) {
-                    pl.setListCode(extractQueryParam(href, "list"));
-                } else {
-                    pl.setListCode(codeEl.attr("value"));
-                }
-            }
-
-            Element totalEl = item.selectFirst(".count, .total");
-            if (totalEl != null) {
-                try {
-                    pl.setTotal(Integer.parseInt(totalEl.text().trim()));
-                } catch (NumberFormatException ignored) {}
-            }
-
-            playlists.add(pl);
         }
-        return playlists;
+
+        return list;
+    }
+
+    private static PlaylistItem parseSinglePlaylistCard(Element card) {
+        PlaylistItem item = new PlaylistItem();
+
+        // 视频链接 → ListUrl / ListCode
+        Element linkEl = card.selectFirst("a.video-link");
+        if (linkEl == null) {
+            linkEl = card.selectFirst("a[href*=/watch]");
+        }
+        if (linkEl != null) {
+            String href = linkEl.attr("abs:href");
+            if (StringUtils.isEmpty(href)) {
+                href = linkEl.attr("href");
+            }
+            item.setListUrl(href);
+            item.setListCode(extractListCode(href));
+        }
+
+        // 封面图
+        Element imgEl = card.selectFirst("img.main-thumb");
+        if (imgEl == null) {
+            imgEl = card.selectFirst("img");
+        }
+        if (imgEl != null) {
+            item.setCoverUrl(getAbsUrl(imgEl, "src"));
+        }
+
+        // 标题
+        Element titleEl = card.selectFirst("div.title");
+        if (titleEl != null) {
+            item.setTitle(titleEl.text().trim());
+        }
+
+        // 副标题（上传者 + 时间）
+        Element subtitleEl = card.selectFirst("div.subtitle a");
+        if (subtitleEl != null) {
+            item.setUploaderUrl(subtitleEl.attr("abs:href"));
+            String subtitleText = subtitleEl.text().trim();
+            String[] parts = subtitleText.split("\\s*•\\s*");
+            if (parts.length >= 1) {
+                item.setUploader(parts[0].trim());
+            }
+            if (parts.length >= 2) {
+                item.setUploadTime(parts[1].trim());
+            }
+        }
+
+        // 总数
+        Element totalEl = card.selectFirst("div.stats-container > div");
+        if (totalEl != null) {
+            String totalText = totalEl.text().trim().replaceAll("[^0-9]", "");
+            item.setTotal(Integer.parseInt(totalText));
+        }
+
+        return item;
     }
 
     /**
@@ -746,6 +782,17 @@ public class HtmlParser {
             return null;
         }
         return extractQueryParam(url, "v");
+    }
+
+    /**
+     * 从URL中提取列表代码
+     * /playlist?list=691833 -> 691833
+     */
+    public static String extractListCode(String url) {
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
+        return extractQueryParam(url, "list");
     }
 
     /**
@@ -1284,5 +1331,136 @@ public class HtmlParser {
             }
         }
         return options;
+    }
+
+    public static UserPage parseUserPage(Document doc) {
+        UserPage page = new UserPage();
+
+        // 解析用户信息
+        Profile profile = parseProfile(doc);
+        page.setProfile(profile);
+
+        // 解析视频列表
+        List<VideoInfo> videoList = parseVideoList(doc);
+        page.setVideoList(videoList);
+
+        // 解析播放列表
+        List<PlaylistItem> playlist = parsePlaylistItems(doc);
+        page.setPlaylists(playlist);
+        return page;
+    }
+
+    public static List<VideoInfo> parseVideoList(Document doc) {
+        Element videoListElem = doc.selectFirst("#home-rows-wrapper > div.tab-content-container > div > div:nth-child(2)");
+        if (videoListElem != null) {
+            return parseVideoCards(videoListElem);
+        }
+        return Collections.emptyList();
+    }
+
+    public static Profile parseProfile(Document doc) {
+        Element profileElem = doc.selectFirst("#playlist-headings-wrapper > div.profile-main-container");
+        if (profileElem != null) {
+            Profile profile = new Profile();
+            // id
+            Element idElem = profileElem.selectFirst("div.profile-content-right > div.profile-sub-stats > div.profile-sub-stats-id");
+            if (idElem != null){
+                String idText = idElem.text().trim().replaceAll("[^0-9]", "");
+                if (!idText.isEmpty()) {
+                    profile.setId(idText);
+                }
+            }
+            // 昵称
+            Element displayNameElem = profileElem.selectFirst("div.profile-content-right > h1");
+            if (displayNameElem != null) {
+                profile.setName(displayNameElem.text().trim());
+            }
+
+            // 头像
+            Element avatarElem = profileElem.selectFirst("div.profile-avatar-wrapper > a > img");
+            if (avatarElem != null) {
+                profile.setAvatarUrl(avatarElem.attr("abs:src"));
+            }
+
+            // 订阅者数 & 视频数
+            Element subscriberAndVideoElem = profileElem.selectFirst("div.profile-content-right > div.profile-sub-stats > div.profile-sub-stats-new-line");
+            if (subscriberAndVideoElem != null) {
+                String text = subscriberAndVideoElem.text().trim();
+                String[] parts = text.split(" • ");
+                if (parts.length == 2) {
+                    String subscriberText = parts[0].replaceAll("[^0-9]", "");
+                    String videoText = parts[1].replaceAll("[^0-9]", "");
+                    if (!subscriberText.isEmpty()) {
+                        profile.setSubscriberCount(Integer.parseInt(subscriberText));
+                    }
+                    if (!videoText.isEmpty()) {
+                        profile.setVideoCount(Integer.parseInt(videoText));
+                    }
+                }
+            }
+            return profile;
+        }
+        return null;
+    }
+
+    private static Map<String, String> parseUserPageSort(Document doc) {
+        Element sortGroupElem = doc.selectFirst("#home-rows-wrapper > div.tab-content-container > div > div.filter-button-group");
+        if (sortGroupElem != null){
+            Elements children = sortGroupElem.children();
+            if(CollectionUtils.isNotEmpty(children)){
+                Map<String, String> sortMap = new HashMap<>();
+                for (Element child : children) {
+                    String href = getAbsUrl(child, "href");
+                    String type = extractUserPageSortType(href);
+                    String text = child.text().trim();
+                    sortMap.put(text, type);
+                }
+                return sortMap;
+            }
+        }
+        return null;
+    }
+
+    private static String extractUserPageSortType(String url) {
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
+        return extractQueryParam(url, "sort");
+    }
+
+    public static UserUploadedPage parseUserUploadedPage(Document doc) {
+        UserUploadedPage page = new UserUploadedPage();
+
+        // 解析用户信息
+        Profile profile = parseProfile(doc);
+        page.setProfile(profile);
+
+        // 解析排序
+        Map<String, String> sort = parseUserPageSort(doc);
+        page.setSort(sort);
+
+        // 解析视频列表
+        List<VideoInfo> videoList = parseVideoList(doc);
+        page.setVideoList(videoList);
+
+        return page;
+    }
+
+    public static UserPlaylistsPage parseUserPlaylistsPage(Document doc) {
+        UserPlaylistsPage page = new UserPlaylistsPage();
+
+        // 解析用户信息
+        Profile profile = parseProfile(doc);
+        page.setProfile(profile);
+
+        // 解析排序
+        Map<String, String> sort = parseUserPageSort(doc);
+        page.setSort(sort);
+
+        // 解析播放列表
+        List<PlaylistItem> playlist = parsePlaylistItems(doc);
+        page.setPlaylists(playlist);
+
+        return page;
     }
 }

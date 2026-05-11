@@ -1,19 +1,12 @@
 package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
-import com.shikou.exception.HanimeApiException;
-import com.shikou.exception.HanimeException;
-import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.HomePage;
-import com.shikou.model.entities.page.SearchPage;
-import com.shikou.model.entities.page.WatchPage;
+import com.shikou.model.entities.page.*;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -173,6 +166,132 @@ public class HanimeapiClientTest {
             System.out.println("可用画质: " + watchPage.getVideoUrls().keySet());
         }
         System.out.println();
+    }
+
+    @Test
+    public void testGetProfile() throws Exception {
+        System.out.println("--- 获取用户Profile ---");
+        String userId = "995886";
+        Profile profile = client.getProfile(userId);
+        System.out.println("用户ID: " + profile.getId());
+        System.out.println("用户名: " + profile.getName());
+        System.out.println("用户头像: " + profile.getAvatarUrl());
+        System.out.println("视频数量: " + profile.getVideoCount());
+        System.out.println("订阅者数量: " + profile.getSubscriberCount());
+        System.out.println();
+    }
+
+    @Test
+    public void testGetUploadVideos() throws Exception {
+        System.out.println("--- 获取用户上传视频 ---");
+        UserParam param = UserParam.builder()
+                .userId("367290")
+                .page(2)
+                .sort("oldest")
+                .build();
+        List<VideoInfo> videos = client.getUploadVideos(param);
+        System.out.println("上传视频数量: " + videos.size());
+        for (int i = 0; i < Math.min(3, videos.size()); i++) {
+            VideoInfo info = videos.get(i);
+            System.out.println("  [" + (i + 1) + "] " + info.getTitle() + " | 代码: " + info.getVideoCode());
+        }
+        System.out.println();
+    }
+
+    @Test
+    public void testGetPlaylists() throws Exception {
+        System.out.println("--- 获取用户播放列表 ---");
+        UserParam param = UserParam.builder()
+                .userId("367290")
+                .page(1)
+                .sort("oldest")
+                .build();
+        List<PlaylistItem> playlists = client.getPlaylists(param);
+        System.out.println("播放列表数量: " + playlists.size());
+        for (PlaylistItem item : playlists) {
+            System.out.println("  " + item.getTitle() + " | 代码: " + item.getListCode() + " | 链接: " + item.getListUrl());
+            System.out.println("  total: " + item.getTotal());
+        }
+        System.out.println();
+    }
+
+    @Test
+    public void testGetUserPage() throws Exception {
+        System.out.println("--- 获取用户页面 ---");
+        String userId = "995886";
+        UserPage userPage = client.getUserPage(userId);
+        Profile profile = userPage.getProfile();
+        System.out.println("用户ID: " + profile.getId());
+        System.out.println("用户名: " + profile.getName());
+        System.out.println("用户头像: " + profile.getAvatarUrl());
+        System.out.println("用户视频数量: " + profile.getVideoCount());
+        System.out.println("用户订阅数量: " + profile.getSubscriberCount());
+        System.out.println("------------ 用户视频列表 ------------");
+        List<VideoInfo> videoList = userPage.getVideoList();
+        if (videoList != null) {
+            for (VideoInfo videoInfo : videoList) {
+                System.out.println("  " + videoInfo.getTitle() + " | 代码: " + videoInfo.getVideoCode());
+            }
+        }
+        System.out.println("------------ 用户播放列表 ------------");
+        List<PlaylistItem> playlist = userPage.getPlaylists();
+        if (playlist != null) {
+            for (PlaylistItem playlistItem : playlist) {
+                System.out.println("  " + playlistItem.getTitle() + " | 代码: " + playlistItem.getListCode() + " | 链接: " + playlistItem.getListUrl());
+                System.out.println("total: " + playlistItem.getTotal());
+            }
+        }
+    }
+
+    @Test
+    public void testGetUserUploadedPage() throws Exception {
+        System.out.println("--- 获取用户上传视频页面 ---");
+        String userId = "367290";
+        UserParam userParam = UserParam.builder()
+                .userId(userId)
+                .page(2)
+                .sort("oldest")
+                .build();
+        UserUploadedPage userUploadedPage = client.getUserUploadedPage(userParam);
+        Profile profile = userUploadedPage.getProfile();
+        System.out.println("用户ID: " + profile.getId());
+        System.out.println("用户名: " + profile.getName());
+        System.out.println("用户头像: " + profile.getAvatarUrl());
+        System.out.println("用户视频数量: " + profile.getVideoCount());
+        System.out.println("用户订阅数量: " + profile.getSubscriberCount());
+        System.out.println("------------ 用户视频列表 ------------");
+        List<VideoInfo> videoList = userUploadedPage.getVideoList();
+        if (videoList != null) {
+            for (VideoInfo videoInfo : videoList) {
+                System.out.println("  " + videoInfo.getTitle() + " | 代码: " + videoInfo.getVideoCode());
+            }
+        }
+    }
+
+    @Test
+    public void testGetUserPlaylistsPage() throws Exception {
+        System.out.println("--- 获取用户播放列表页面 ---");
+        String userId = "367290";
+        UserParam userParam = UserParam.builder()
+                .userId(userId)
+                .page(1)
+                .sort("oldest")
+                .build();
+        UserPlaylistsPage userPlaylistsPage = client.getUserPlaylistsPage(userParam);
+        Profile profile = userPlaylistsPage.getProfile();
+        System.out.println("用户ID: " + profile.getId());
+        System.out.println("用户名: " + profile.getName());
+        System.out.println("用户头像: " + profile.getAvatarUrl());
+        System.out.println("用户视频数量: " + profile.getVideoCount());
+        System.out.println("用户订阅数量: " + profile.getSubscriberCount());
+        System.out.println("------------ 用户播放列表 ------------");
+        List<PlaylistItem> playlist = userPlaylistsPage.getPlaylists();
+        if (playlist != null) {
+            for (PlaylistItem playlistItem : playlist) {
+                System.out.println("  " + playlistItem.getTitle() + " | 代码: " + playlistItem.getListCode() + " | 链接: " + playlistItem.getListUrl());
+                System.out.println("total: " + playlistItem.getTotal());
+            }
+        }
     }
 
     @Test

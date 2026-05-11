@@ -5,12 +5,8 @@ import com.shikou.exception.HanimeApiException;
 import com.shikou.exception.HanimeAuthenticationException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
-import com.shikou.exception.HanimeValidationException;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.HomePage;
-import com.shikou.model.entities.page.PreviewPage;
-import com.shikou.model.entities.page.SearchPage;
-import com.shikou.model.entities.page.WatchPage;
+import com.shikou.model.entities.page.*;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -170,6 +165,28 @@ public class HanimeApiClient {
         return commentService.getReplies(commentId);
     }
 
+    public UserPage getUserPage(String userId) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getUserPage(userId);
+    }
+
+    public UserUploadedPage getUserUploadedPage(String userId) throws HanimeApiException, HanimeNetworkException {
+        UserParam param = UserParam.builder().userId(userId).build();
+        return getUserUploadedPage(param);
+    }
+
+    public UserUploadedPage getUserUploadedPage(UserParam param) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getUserUploadedPage(param);
+    }
+
+    public UserPlaylistsPage getUserPlaylistsPage(String userId) throws HanimeApiException, HanimeNetworkException {
+        UserParam param = UserParam.builder().userId(userId).build();
+        return getUserPlaylistsPage(param);
+    }
+
+    public UserPlaylistsPage getUserPlaylistsPage(UserParam param) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getUserPlaylistsPage(param);
+    }
+
     public List<String> getGenreList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getGenreList();
     }
@@ -192,6 +209,18 @@ public class HanimeApiClient {
 
     public HanimeVideo getVideoDetail(String videoCode) throws HanimeApiException, HanimeNetworkException {
         return baseService.getVideoDetail(videoCode);
+    }
+
+    public Profile getProfile(String userId) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getProfile(userId);
+    }
+
+    public List<VideoInfo> getUploadVideos(UserParam param) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getUploadVideos(param);
+    }
+
+    public List<PlaylistItem> getPlaylists(UserParam param) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getPlaylists(param);
     }
 
     public PreviewPage getPreviews(String date) throws HanimeApiException, HanimeNetworkException {
