@@ -160,7 +160,7 @@ public class HanimeapiClientTest {
     @Test
     public void testGetWatchPage() throws Exception {
         System.out.println("--- 获取观看页面 ---");
-        String videoCode = "405939";
+        String videoCode = "10";
         WatchPage watchPage = client.getWatchPage(videoCode);
         System.out.println("标题: " + watchPage.getTitle());
         System.out.println("中文标题: " + watchPage.getChineseTitle());

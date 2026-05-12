@@ -469,7 +469,7 @@ public class HtmlParser {
      */
     private static List<VideoInfo> parseRelatedHanimes(Document doc) {
         List<VideoInfo> related = new ArrayList<>();
-        Element relatedSection = doc.selectFirst("#related-tabcontent > div.row.doujin-row");
+        Element relatedSection = doc.selectFirst("#related-tabcontent > div.row");
         if (relatedSection != null) {
             related.addAll(parseVideoCards(relatedSection));
         }
@@ -856,16 +856,39 @@ public class HtmlParser {
             }
         }
 
-        // 再解析 .video-card-inner（首页分区用）
+        // 再解析 .video-card-inner
         Elements videoCardInners = root.select("div.video-card-inner");
         for (Element card : videoCardInners) {
             VideoInfo info = parseVideoCardInner(card);
-            if (info != null && info.getVideoCode() != null) {
+            if (info != null && info.getTitle() != null) {
+                updateVideoItemType(info);
                 list.add(info);
             }
         }
 
         return list;
+    }
+
+    private static void updateVideoItemType(VideoInfo videoInfo){
+        int itemType = 0;
+    
+        boolean hasCoverUrl = StringUtils.isNotEmpty(videoInfo.getCoverUrl());
+        boolean hasTitle = StringUtils.isNotEmpty(videoInfo.getTitle());
+        boolean hasOtherFields = StringUtils.isNotEmpty(videoInfo.getVideoCode())
+                || StringUtils.isNotEmpty(videoInfo.getVideoUrl())
+                || StringUtils.isNotEmpty(videoInfo.getDuration())
+                || StringUtils.isNotEmpty(videoInfo.getLikeRate())
+                || StringUtils.isNotEmpty(videoInfo.getViews())
+                || StringUtils.isNotEmpty(videoInfo.getUploader())
+                || StringUtils.isNotEmpty(videoInfo.getUploaderUrl())
+                || StringUtils.isNotEmpty(videoInfo.getUploadTime())
+                || StringUtils.isNotEmpty(videoInfo.getGenre());
+    
+        if (hasCoverUrl && hasTitle && !hasOtherFields) {
+            itemType = 1;
+        }
+    
+        videoInfo.setItemType(itemType);
     }
 
     /**
