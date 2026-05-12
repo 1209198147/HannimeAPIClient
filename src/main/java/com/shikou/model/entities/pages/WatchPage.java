@@ -1,4 +1,4 @@
-package com.shikou.model.entities.page;
+package com.shikou.model.entities.pages;
 
 import com.shikou.model.entities.*;
 import lombok.AllArgsConstructor;

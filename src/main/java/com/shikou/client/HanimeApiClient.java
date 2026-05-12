@@ -6,7 +6,9 @@ import com.shikou.exception.HanimeAuthenticationException;
 import com.shikou.exception.HanimeException;
 import com.shikou.exception.HanimeNetworkException;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.*;
+import com.shikou.model.entities.pages.*;
+import com.shikou.model.entities.results.PlaylistsResult;
+import com.shikou.model.entities.results.VideosResult;
 import com.shikou.service.*;
 import okhttp3.OkHttpClient;
 import org.apache.commons.collections4.CollectionUtils;
@@ -199,11 +201,11 @@ public class HanimeApiClient {
         return baseService.getSortTypeList();
     }
 
-    public SearchResult search(String query) throws HanimeApiException, HanimeNetworkException {
+    public VideosResult search(String query) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(query);
     }
 
-    public SearchResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
+    public VideosResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(params);
     }
 
@@ -215,11 +217,11 @@ public class HanimeApiClient {
         return baseService.getProfile(userId);
     }
 
-    public List<VideoInfo> getUploadVideos(CommonParam param) throws HanimeApiException, HanimeNetworkException {
+    public VideosResult getUploadVideos(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getUploadVideos(param);
     }
 
-    public List<PlaylistItem> getPlaylists(CommonParam param) throws HanimeApiException, HanimeNetworkException {
+    public PlaylistsResult getPlaylists(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getPlaylists(param);
     }
 

@@ -1,7 +1,9 @@
 package com.shikou.parser;
 
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.*;
+import com.shikou.model.entities.pages.*;
+import com.shikou.model.entities.results.PlaylistsResult;
+import com.shikou.model.entities.results.VideosResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -479,12 +481,12 @@ public class HtmlParser {
     /**
      * 从搜索结果页面HTML解析影片列表
      */
-    public static SearchResult parseSearchResults(Document doc) {
+    public static VideosResult parseSearchResults(Document doc) {
         List<VideoInfo> videoInfos = parseVideoCards(doc);
-        SearchResult searchResult = new SearchResult(videoInfos);
+        VideosResult videosResult = new VideosResult(videoInfos);
         // 获取分页信息
-        parsePagination(doc, searchResult);
-        return searchResult;
+        parsePagination(doc, videosResult);
+        return videosResult;
     }
 
     // ======================== 预览页面解析 ========================
@@ -1665,5 +1667,19 @@ public class HtmlParser {
             }
             entity.setTotalPage(maxPage);
         }
+    }
+
+    public static VideosResult parseUploadVideos(Document doc) {
+        List<VideoInfo> videoInfos = parseVideoList(doc);
+        VideosResult result = new VideosResult(videoInfos);
+        parsePagination(doc, result);
+        return result;
+    }
+
+    public static PlaylistsResult parsePlaylists(Document doc) {
+        List<PlaylistItem> playlistItems = HtmlParser.parsePlaylistItems(doc);
+        PlaylistsResult result = new PlaylistsResult(playlistItems);
+        parsePagination(doc, result);
+        return result;
     }
 }

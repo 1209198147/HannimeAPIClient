@@ -2,7 +2,9 @@ package com.shikou.client;
 
 import com.shikou.config.HanimeConfig;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.*;
+import com.shikou.model.entities.pages.*;
+import com.shikou.model.entities.results.PlaylistsResult;
+import com.shikou.model.entities.results.VideosResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -123,12 +125,12 @@ public class HanimeapiClientTest {
                 .query("女仆")
                 .page(1)
                 .build();
-        SearchResult searchResult = client.search(searchParams);
-        List<VideoInfo> videos = searchResult.getVideos();
-        System.out.println("搜索结果数量: " + searchResult.getVideos().size());
-        System.out.println("总页数: " + searchResult.getTotalPage());
-        System.out.println("是否有上一页: " + searchResult.isHasPrevPage());
-        System.out.println("是否有下一页: " + searchResult.isHasNextPage());
+        VideosResult videosResult = client.search(searchParams);
+        List<VideoInfo> videos = videosResult.getVideos();
+        System.out.println("搜索结果数量: " + videosResult.getVideos().size());
+        System.out.println("总页数: " + videosResult.getTotalPage());
+        System.out.println("是否有上一页: " + videosResult.isHasPrevPage());
+        System.out.println("是否有下一页: " + videosResult.isHasNextPage());
         for (int i = 0; i < Math.min(3, videos.size()); i++) {
             VideoInfo info = videos.get(i);
             System.out.println("  [" + (i + 1) + "] " + info.getTitle() + " | 代码: " + info.getVideoCode());
@@ -196,12 +198,16 @@ public class HanimeapiClientTest {
                 .page(2)
                 .sort("oldest")
                 .build();
-        List<VideoInfo> videos = client.getUploadVideos(param);
+        VideosResult uploadVideos = client.getUploadVideos(param);
+        List<VideoInfo> videos = uploadVideos.getVideos();
         System.out.println("上传视频数量: " + videos.size());
         for (int i = 0; i < Math.min(3, videos.size()); i++) {
             VideoInfo info = videos.get(i);
             System.out.println("  [" + (i + 1) + "] " + info.getTitle() + " | 代码: " + info.getVideoCode());
         }
+        System.out.println("总页数: " + uploadVideos.getTotalPage());
+        System.out.println("是否有上一页: " + uploadVideos.isHasPrevPage());
+        System.out.println("是否有下一页: " + uploadVideos.isHasNextPage());
         System.out.println();
     }
 
@@ -213,12 +219,16 @@ public class HanimeapiClientTest {
                 .page(1)
                 .sort("oldest")
                 .build();
-        List<PlaylistItem> playlists = client.getPlaylists(param);
+        PlaylistsResult playlistsResult = client.getPlaylists(param);
+        List<PlaylistItem> playlists = playlistsResult.getPlaylists();
         System.out.println("播放列表数量: " + playlists.size());
         for (PlaylistItem item : playlists) {
             System.out.println("  " + item.getTitle() + " | 代码: " + item.getListCode() + " | 链接: " + item.getListUrl());
             System.out.println("  total: " + item.getTotal());
         }
+        System.out.println("总页数: " + playlistsResult.getTotalPage());
+        System.out.println("是否有上一页: " + playlistsResult.isHasPrevPage());
+        System.out.println("是否有下一页: " + playlistsResult.isHasNextPage());
         System.out.println();
     }
 

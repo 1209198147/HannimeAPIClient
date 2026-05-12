@@ -15,7 +15,7 @@
 ```java
 import com.shikou.client.*;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.HomePage;
+import com.shikou.model.entities.pages.HomePage;
 
 public class Demo {
     public static void main(String[] args) throws Exception {
@@ -27,7 +27,7 @@ public class Demo {
         home.getSections().forEach(section -> {
             System.out.println("分区: " + section.getTitle());
             section.getVideoInfoList().forEach(v ->
-                System.out.println("  - " + v.getTitle())
+                    System.out.println("  - " + v.getTitle())
             );
         });
 
@@ -39,7 +39,7 @@ public class Demo {
                 .page(1)
                 .build();
         client.search(params).forEach(v ->
-            System.out.println(v.getTitle() + " | " + v.getViews())
+                System.out.println(v.getTitle() + " | " + v.getViews())
         );
 
         // 获取影片详情

@@ -3,7 +3,9 @@ package com.shikou.service;
 import com.shikou.config.HanimeConfig;
 import com.shikou.exception.*;
 import com.shikou.model.entities.*;
-import com.shikou.model.entities.page.*;
+import com.shikou.model.entities.pages.*;
+import com.shikou.model.entities.results.PlaylistsResult;
+import com.shikou.model.entities.results.VideosResult;
 import com.shikou.parser.HtmlParser;
 import com.shikou.util.HanimeHttpExecutor;
 import okhttp3.*;
@@ -55,7 +57,7 @@ public class HanimeBaseService {
      * @param params 搜索参数
      * @return 影片列表
      */
-    public SearchResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
+    public VideosResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = getSearchUrl(params);
 
         Request request = new Request.Builder()
@@ -111,7 +113,7 @@ public class HanimeBaseService {
      * @param query 搜索关键词
      * @return 影片列表
      */
-    public SearchResult search(String query) throws HanimeApiException, HanimeNetworkException {
+    public VideosResult search(String query) throws HanimeApiException, HanimeNetworkException {
         return search(new SearchParams(query));
     }
 
@@ -435,7 +437,7 @@ public class HanimeBaseService {
         return HtmlParser.parseProfile(doc);
     }
 
-    public List<VideoInfo> getUploadVideos(CommonParam param) throws HanimeNetworkException, HanimeApiException {
+    public VideosResult getUploadVideos(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserUploadedUrl(param);
         Request request = new Request.Builder()
                 .url(url)
@@ -446,10 +448,10 @@ public class HanimeBaseService {
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "上传视频列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
-        return HtmlParser.parseVideoList(doc);
+        return HtmlParser.parseUploadVideos(doc);
     }
 
-    public List<PlaylistItem> getPlaylists(CommonParam param) throws HanimeNetworkException, HanimeApiException {
+    public PlaylistsResult getPlaylists(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserPlaylistsUrl(param);
         Request request = new Request.Builder()
                 .url(url)
@@ -460,7 +462,7 @@ public class HanimeBaseService {
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "获取用户播放列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
-        return HtmlParser.parsePlaylistItems(doc);
+        return HtmlParser.parsePlaylists(doc);
     }
 
     public Playlist getPlaylist(CommonParam param) throws HanimeNetworkException, HanimeApiException {

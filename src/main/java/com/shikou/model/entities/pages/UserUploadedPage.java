@@ -1,6 +1,6 @@
-package com.shikou.model.entities.page;
+package com.shikou.model.entities.pages;
 
-import com.shikou.model.entities.PlaylistItem;
+import com.shikou.model.entities.Pagination;
 import com.shikou.model.entities.Profile;
 import com.shikou.model.entities.VideoInfo;
 import lombok.AllArgsConstructor;
@@ -9,27 +9,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * 用户页
+ * 用户上传影片页
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserPage {
+public class UserUploadedPage extends Pagination {
     /**
      * 用户信息
      */
     private Profile profile;
 
     /**
-     * 影片
+     * 排序方式
      */
-    List<VideoInfo> videoList;
+    private Map<String, String> sort;
 
     /**
-     * 播放清单
+     * 影片
      */
-    List<PlaylistItem> playlists;
+    private List<VideoInfo> videoList;
 }

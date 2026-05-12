@@ -1,33 +1,35 @@
-package com.shikou.model.entities.page;
+package com.shikou.model.entities.pages;
 
-import com.shikou.model.entities.Pagination;
 import com.shikou.model.entities.PlaylistItem;
 import com.shikou.model.entities.Profile;
+import com.shikou.model.entities.VideoInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 用户页
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserPlaylistsPage extends Pagination {
+public class UserPage {
     /**
      * 用户信息
      */
     private Profile profile;
 
     /**
-     * 排序方式
+     * 影片
      */
-    private Map<String, String> sort;
+    List<VideoInfo> videoList;
 
     /**
-     * 播放列表
+     * 播放清单
      */
-    private List<PlaylistItem> playlists;
+    List<PlaylistItem> playlists;
 }
