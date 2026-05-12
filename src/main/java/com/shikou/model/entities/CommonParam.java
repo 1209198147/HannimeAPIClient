@@ -7,17 +7,21 @@ import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 播放列表相关的参数
+ * 公共参数(页码、code、排序方式)
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlaylistParam {
-    @NotNull
-    private String listCode;
+public class CommonParam {
+    /** 页码，默认1 */
     @Builder.Default
     private int page = 1;
+
+    /** code */
+    @NotNull
+    private String code;
+
     /** 排序方式 */
     private String sort;
 }

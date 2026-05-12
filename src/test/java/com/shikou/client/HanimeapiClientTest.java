@@ -184,8 +184,8 @@ public class HanimeapiClientTest {
     @Test
     public void testGetUploadVideos() throws Exception {
         System.out.println("--- 获取用户上传视频 ---");
-        UserParam param = UserParam.builder()
-                .userId("367290")
+        CommonParam param = CommonParam.builder()
+                .code("367290")
                 .page(2)
                 .sort("oldest")
                 .build();
@@ -201,8 +201,8 @@ public class HanimeapiClientTest {
     @Test
     public void testGetPlaylists() throws Exception {
         System.out.println("--- 获取用户播放列表 ---");
-        UserParam param = UserParam.builder()
-                .userId("367290")
+        CommonParam param = CommonParam.builder()
+                .code("367290")
                 .page(1)
                 .sort("oldest")
                 .build();
@@ -247,8 +247,8 @@ public class HanimeapiClientTest {
     public void testGetUserUploadedPage() throws Exception {
         System.out.println("--- 获取用户上传视频页面 ---");
         String userId = "367290";
-        UserParam userParam = UserParam.builder()
-                .userId(userId)
+        CommonParam userParam = CommonParam.builder()
+                .code(userId)
                 .page(2)
                 .sort("oldest")
                 .build();
@@ -272,8 +272,8 @@ public class HanimeapiClientTest {
     public void testGetUserPlaylistsPage() throws Exception {
         System.out.println("--- 获取用户播放列表页面 ---");
         String userId = "367290";
-        UserParam userParam = UserParam.builder()
-                .userId(userId)
+        CommonParam userParam = CommonParam.builder()
+                .code(userId)
                 .page(1)
                 .sort("oldest")
                 .build();
@@ -298,8 +298,8 @@ public class HanimeapiClientTest {
     public void testGetPlaylist() throws Exception {
         System.out.println("--- 获取播放列表页面 ---");
         String listCode = "685024";
-        PlaylistParam listParam = PlaylistParam.builder()
-                .listCode(listCode)
+        CommonParam listParam = CommonParam.builder()
+                .code(listCode)
                 .page(1)
                 .build();
         Playlist playlistsPage = client.getPlaylist(listParam);

@@ -351,8 +351,8 @@ public class HanimeBaseService {
     }
 
     @NotNull
-    private HttpUrl getUserUploadedUrl(UserParam param) {
-        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getUserId() + "/uploaded")).newBuilder()
+    private HttpUrl getUserUploadedUrl(CommonParam param) {
+        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getCode() + "/uploaded")).newBuilder()
                 .addQueryParameter("page", String.valueOf(param.getPage()));
 
         if(StringUtils.isNotBlank(param.getSort())){
@@ -363,8 +363,8 @@ public class HanimeBaseService {
     }
 
     @NotNull
-    private HttpUrl getUserPlaylistsUrl(UserParam param) {
-        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getUserId() + "/playlists")).newBuilder()
+    private HttpUrl getUserPlaylistsUrl(CommonParam param) {
+        HttpUrl.Builder builder = Objects.requireNonNull(HttpUrl.parse(config.getBaseUrl() + "user/" + param.getCode() + "/playlists")).newBuilder()
                 .addQueryParameter("page", String.valueOf(param.getPage()));
 
         if(StringUtils.isNotBlank(param.getSort())){
@@ -391,7 +391,7 @@ public class HanimeBaseService {
         return HtmlParser.parseUserPage(doc);
     }
 
-    public UserUploadedPage getUserUploadedPage(UserParam param) throws HanimeNetworkException, HanimeApiException {
+    public UserUploadedPage getUserUploadedPage(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserUploadedUrl(param);
 
         Request request = new Request.Builder()
@@ -406,7 +406,7 @@ public class HanimeBaseService {
         return HtmlParser.parseUserUploadedPage(doc);
     }
 
-    public UserPlaylistsPage getUserPlaylistsPage(UserParam param) throws HanimeNetworkException, HanimeApiException {
+    public UserPlaylistsPage getUserPlaylistsPage(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserPlaylistsUrl(param);
 
         Request request = new Request.Builder()
@@ -435,7 +435,7 @@ public class HanimeBaseService {
         return HtmlParser.parseProfile(doc);
     }
 
-    public List<VideoInfo> getUploadVideos(UserParam param) throws HanimeNetworkException, HanimeApiException {
+    public List<VideoInfo> getUploadVideos(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserUploadedUrl(param);
         Request request = new Request.Builder()
                 .url(url)
@@ -444,12 +444,12 @@ public class HanimeBaseService {
                 .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
-        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getUserId() + "上传视频列表详情失败");
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "上传视频列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
         return HtmlParser.parseVideoList(doc);
     }
 
-    public List<PlaylistItem> getPlaylists(UserParam param) throws HanimeNetworkException, HanimeApiException {
+    public List<PlaylistItem> getPlaylists(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getUserPlaylistsUrl(param);
         Request request = new Request.Builder()
                 .url(url)
@@ -458,12 +458,12 @@ public class HanimeBaseService {
                 .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
-        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getUserId() + "获取用户播放列表详情失败");
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "获取用户播放列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
         return HtmlParser.parsePlaylistItems(doc);
     }
 
-    public Playlist getPlaylist(PlaylistParam param) throws HanimeNetworkException, HanimeApiException {
+    public Playlist getPlaylist(CommonParam param) throws HanimeNetworkException, HanimeApiException {
         HttpUrl url = getPlaylistUrl(param);
         Request request = new Request.Builder()
                 .url(url)
@@ -477,9 +477,9 @@ public class HanimeBaseService {
     }
 
     @NotNull
-    private HttpUrl getPlaylistUrl(PlaylistParam param) {
+    private HttpUrl getPlaylistUrl(CommonParam param) {
         return HttpUrl.parse(config.getBaseUrl() + "playlist").newBuilder()
-                .addQueryParameter("list", param.getListCode())
+                .addQueryParameter("list", param.getCode())
                 .addQueryParameter("page", String.valueOf(param.getPage())).build();
     }
 }

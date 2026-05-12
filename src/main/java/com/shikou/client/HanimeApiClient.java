@@ -170,20 +170,20 @@ public class HanimeApiClient {
     }
 
     public UserUploadedPage getUserUploadedPage(String userId) throws HanimeApiException, HanimeNetworkException {
-        UserParam param = UserParam.builder().userId(userId).build();
+        CommonParam param = CommonParam.builder().code(userId).build();
         return getUserUploadedPage(param);
     }
 
-    public UserUploadedPage getUserUploadedPage(UserParam param) throws HanimeApiException, HanimeNetworkException {
+    public UserUploadedPage getUserUploadedPage(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getUserUploadedPage(param);
     }
 
     public UserPlaylistsPage getUserPlaylistsPage(String userId) throws HanimeApiException, HanimeNetworkException {
-        UserParam param = UserParam.builder().userId(userId).build();
+        CommonParam param = CommonParam.builder().code(userId).build();
         return getUserPlaylistsPage(param);
     }
 
-    public UserPlaylistsPage getUserPlaylistsPage(UserParam param) throws HanimeApiException, HanimeNetworkException {
+    public UserPlaylistsPage getUserPlaylistsPage(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getUserPlaylistsPage(param);
     }
 
@@ -215,15 +215,15 @@ public class HanimeApiClient {
         return baseService.getProfile(userId);
     }
 
-    public List<VideoInfo> getUploadVideos(UserParam param) throws HanimeApiException, HanimeNetworkException {
+    public List<VideoInfo> getUploadVideos(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getUploadVideos(param);
     }
 
-    public List<PlaylistItem> getPlaylists(UserParam param) throws HanimeApiException, HanimeNetworkException {
+    public List<PlaylistItem> getPlaylists(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getPlaylists(param);
     }
 
-    public Playlist getPlaylist(PlaylistParam param) throws HanimeApiException, HanimeNetworkException {
+    public Playlist getPlaylist(CommonParam param) throws HanimeApiException, HanimeNetworkException {
         return baseService.getPlaylist(param);
     }
 
