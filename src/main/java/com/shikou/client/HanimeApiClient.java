@@ -199,11 +199,11 @@ public class HanimeApiClient {
         return baseService.getSortTypeList();
     }
 
-    public List<VideoInfo> search(String query) throws HanimeApiException, HanimeNetworkException {
+    public SearchResult search(String query) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(query);
     }
 
-    public List<VideoInfo> search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
+    public SearchResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
         return baseService.search(params);
     }
 

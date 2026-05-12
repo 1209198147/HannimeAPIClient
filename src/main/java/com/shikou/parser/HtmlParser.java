@@ -479,8 +479,12 @@ public class HtmlParser {
     /**
      * 从搜索结果页面HTML解析影片列表
      */
-    public static List<VideoInfo> parseSearchResults(Document doc) {
-        return parseVideoCards(doc);
+    public static SearchResult parseSearchResults(Document doc) {
+        List<VideoInfo> videoInfos = parseVideoCards(doc);
+        SearchResult searchResult = new SearchResult(videoInfos);
+        // 获取分页信息
+        parsePagination(doc, searchResult);
+        return searchResult;
     }
 
     // ======================== 预览页面解析 ========================
@@ -1045,6 +1049,9 @@ public class HtmlParser {
 
         List<VideoInfo> videoInfos = parseVideoCards(doc);
         searchPage.setVideos(videoInfos);
+
+        parsePagination(doc, searchPage);
+
         return searchPage;
     }
 
@@ -1443,6 +1450,9 @@ public class HtmlParser {
         List<VideoInfo> videoList = parseVideoList(doc);
         page.setVideoList(videoList);
 
+        // 获取分页信息
+        parsePagination(doc, page);
+
         return page;
     }
 
@@ -1460,6 +1470,9 @@ public class HtmlParser {
         // 解析播放列表
         List<PlaylistItem> playlist = parsePlaylistItems(doc);
         page.setPlaylists(playlist);
+
+        // 获取分页信息
+        parsePagination(doc, page);
 
         return page;
     }
@@ -1543,6 +1556,9 @@ public class HtmlParser {
                 playlist.setVideos(videos);
             }
 
+            // 获取分页信息
+            parsePagination(doc, playlist);
+
             return playlist;
         }
         return null;
@@ -1612,5 +1628,42 @@ public class HtmlParser {
             list.add(info);
         }
         return list;
+    }
+
+    public static void parsePagination(Element element, Pagination entity) {
+        Element paginationElem = element.selectFirst("ul.pagination");
+        if (paginationElem != null) {
+            // 解析是否有上一页：上一页按钮存在且未被禁用
+            Element prevBtn = paginationElem.selectFirst("[aria-label='pagination.previous']");
+            if (prevBtn != null) {
+                boolean isDisabled = prevBtn.hasClass("disabled") || "true".equals(prevBtn.attr("aria-disabled"));
+                entity.setHasPrevPage(!isDisabled);
+            }
+
+            // 解析是否有下一页：下一页按钮存在且未被禁用
+            Element nextBtn = paginationElem.selectFirst("[aria-label='pagination.next']");
+            if (nextBtn != null) {
+                boolean isDisabled = nextBtn.hasClass("disabled") || "true".equals(nextBtn.attr("aria-disabled"));
+                entity.setHasNextPage(!isDisabled);
+            }
+
+            // 解析总页数：遍历所有 a.page-link，提取数字文本取最大值
+            Elements pageLinks = paginationElem.select("a.page-link");
+            int maxPage = 1;
+            for (Element link : pageLinks) {
+                String text = link.ownText().trim();
+                if (text.equals("‹") || text.equals("›")) {
+                    continue;
+                }
+                try {
+                    int pageNum = Integer.parseInt(text);
+                    if (pageNum > maxPage) {
+                        maxPage = pageNum;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            entity.setTotalPage(maxPage);
+        }
     }
 }

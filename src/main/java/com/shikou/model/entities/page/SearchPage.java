@@ -1,5 +1,6 @@
 package com.shikou.model.entities.page;
 
+import com.shikou.model.entities.Pagination;
 import com.shikou.model.entities.VideoInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +18,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SearchPage {
+public class SearchPage extends Pagination {
     List<String> genres;
     Map<String, List<String>> tagsMap;
     List<String> sortTypes;

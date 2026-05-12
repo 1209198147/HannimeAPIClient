@@ -110,6 +110,9 @@ public class HanimeapiClientTest {
                 }
             }
         }
+        System.out.println("总页数: " + searchPage.getTotalPage());
+        System.out.println("是否有上一页: " + searchPage.isHasPrevPage());
+        System.out.println("是否有下一页: " + searchPage.isHasNextPage());
         System.out.println();
     }
 
@@ -120,10 +123,14 @@ public class HanimeapiClientTest {
                 .query("女仆")
                 .page(1)
                 .build();
-        List<VideoInfo> searchResults = client.search(searchParams);
-        System.out.println("搜索结果数量: " + searchResults.size());
-        for (int i = 0; i < Math.min(3, searchResults.size()); i++) {
-            VideoInfo info = searchResults.get(i);
+        SearchResult searchResult = client.search(searchParams);
+        List<VideoInfo> videos = searchResult.getVideos();
+        System.out.println("搜索结果数量: " + searchResult.getVideos().size());
+        System.out.println("总页数: " + searchResult.getTotalPage());
+        System.out.println("是否有上一页: " + searchResult.isHasPrevPage());
+        System.out.println("是否有下一页: " + searchResult.isHasNextPage());
+        for (int i = 0; i < Math.min(3, videos.size()); i++) {
+            VideoInfo info = videos.get(i);
             System.out.println("  [" + (i + 1) + "] " + info.getTitle() + " | 代码: " + info.getVideoCode());
         }
         System.out.println();

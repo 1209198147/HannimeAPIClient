@@ -55,7 +55,7 @@ public class HanimeBaseService {
      * @param params 搜索参数
      * @return 影片列表
      */
-    public List<VideoInfo> search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
+    public SearchResult search(SearchParams params) throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = getSearchUrl(params);
 
         Request request = new Request.Builder()
@@ -111,7 +111,7 @@ public class HanimeBaseService {
      * @param query 搜索关键词
      * @return 影片列表
      */
-    public List<VideoInfo> search(String query) throws HanimeApiException, HanimeNetworkException {
+    public SearchResult search(String query) throws HanimeApiException, HanimeNetworkException {
         return search(new SearchParams(query));
     }
 

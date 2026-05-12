@@ -1,5 +1,6 @@
 package com.shikou.model.entities.page;
 
+import com.shikou.model.entities.Pagination;
 import com.shikou.model.entities.Profile;
 import com.shikou.model.entities.VideoInfo;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserUploadedPage {
+public class UserUploadedPage extends Pagination {
     /**
      * 用户信息
      */

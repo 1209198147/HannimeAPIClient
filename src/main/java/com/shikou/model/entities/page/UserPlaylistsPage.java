@@ -1,5 +1,6 @@
 package com.shikou.model.entities.page;
 
+import com.shikou.model.entities.Pagination;
 import com.shikou.model.entities.PlaylistItem;
 import com.shikou.model.entities.Profile;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserPlaylistsPage {
+public class UserPlaylistsPage extends Pagination {
     /**
      * 用户信息
      */

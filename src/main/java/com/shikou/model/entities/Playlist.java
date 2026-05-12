@@ -15,7 +15,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Playlist {
+public class Playlist extends Pagination {
     /** 播放列表代码 */
     private String listCode;
 
