@@ -223,6 +223,10 @@ public class HanimeApiClient {
         return baseService.getPlaylists(param);
     }
 
+    public Playlist getPlaylist(PlaylistParam param) throws HanimeApiException, HanimeNetworkException {
+        return baseService.getPlaylist(param);
+    }
+
     public PreviewPage getPreviews(String date) throws HanimeApiException, HanimeNetworkException {
         return baseService.getPreviews(date);
     }

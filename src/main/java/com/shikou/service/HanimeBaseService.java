@@ -444,7 +444,7 @@ public class HanimeBaseService {
                 .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
-        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getUserId() + "上传视频列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
         return HtmlParser.parseVideoList(doc);
     }
@@ -458,8 +458,28 @@ public class HanimeBaseService {
                 .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
-        String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getUserId() + "获取用户播放列表详情失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
         return HtmlParser.parsePlaylistItems(doc);
+    }
+
+    public Playlist getPlaylist(PlaylistParam param) throws HanimeNetworkException, HanimeApiException {
+        HttpUrl url = getPlaylistUrl(param);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", config.getUserAgent())
+                .addHeader("Referer", config.getBaseUrl())
+                .addHeader("Cookie", "user_lang=" + config.getUserLang())
+                .build();
+        String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表页失败");
+        var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());
+        return HtmlParser.parsePlaylistPage(doc);
+    }
+
+    @NotNull
+    private HttpUrl getPlaylistUrl(PlaylistParam param) {
+        return HttpUrl.parse(config.getBaseUrl() + "playlist").newBuilder()
+                .addQueryParameter("list", param.getListCode())
+                .addQueryParameter("page", String.valueOf(param.getPage())).build();
     }
 }

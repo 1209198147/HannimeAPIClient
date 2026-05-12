@@ -1403,7 +1403,7 @@ public class HtmlParser {
         return null;
     }
 
-    private static Map<String, String> parseUserPageSort(Document doc) {
+    private static Map<String, String> parseUserPageSort(Element doc) {
         Element sortGroupElem = doc.selectFirst("#home-rows-wrapper > div.tab-content-container > div > div.filter-button-group");
         if (sortGroupElem != null){
             Elements children = sortGroupElem.children();
@@ -1462,5 +1462,155 @@ public class HtmlParser {
         page.setPlaylists(playlist);
 
         return page;
+    }
+
+    public static Playlist parsePlaylistPage(Document doc) {
+        Element playlistSidebarElem = doc.selectFirst("body > div > div:nth-child(3) > div.nav-bottom-padding.playlist-page-container.page-container-padding > div > div.playlist-sidebar > div");
+        if (playlistSidebarElem != null) {
+            Playlist playlist = new Playlist();
+
+            Element coverElem = playlistSidebarElem.selectFirst("div.playlist-cover-wrapper");
+            if (coverElem != null) {
+                Element imgElem = coverElem.selectFirst("img");
+                if (imgElem != null) {
+                    playlist.setCoverUrl(imgElem.attr("abs:src"));
+                }
+
+                Element listUrlElem = coverElem.selectFirst("a");
+                if (listUrlElem != null) {
+                    String href = listUrlElem.attr("href");
+                    String listCode = extractListCode(href);
+                    playlist.setListCode(listCode);
+                    playlist.setListUrl(href);
+                }
+            }
+
+            // 标题
+            Element titleElem = playlistSidebarElem.selectFirst("div.playlist-details > h1");
+            if (titleElem != null) {
+                playlist.setTitle(titleElem.text().trim());
+            }
+
+            // 上传者
+            Element uploaderInfoElem = playlistSidebarElem.selectFirst("div.playlist-author-info");
+            if (uploaderInfoElem != null) {
+                // 上传者名称 和 url
+                Element uploaderNameElem = uploaderInfoElem.selectFirst("a");
+                if (uploaderNameElem != null) {
+                    playlist.setUploader(uploaderNameElem.text().trim());
+                    String href = getAbsUrl(uploaderNameElem, "href");
+                    playlist.setUploaderUrl(href);
+                }
+                // 上传者头像
+                Element uploaderAvatarElem = uploaderInfoElem.selectFirst("img.author-avatar");
+                if (uploaderAvatarElem != null) {
+                    playlist.setUploaderAvatarUrl(uploaderAvatarElem.attr("abs:src"));
+                }
+            }
+
+
+            // 视频数
+            Element videoCountElem = playlistSidebarElem.selectFirst("#sidebar-video-count");
+            if (videoCountElem != null) {
+                playlist.setTotal(Integer.parseInt(videoCountElem.text().trim()));
+            }
+
+            // 观看数
+            Element viewsElem = playlistSidebarElem.selectFirst("div.playlist-details > div.playlist-meta > p.playlist-stats");
+            if (viewsElem != null) {
+                String fullText = viewsElem.text().trim();
+                // 格式: "播放清單 • 138 部影片 • 觀看次數：0 次", 提取 "0 次"
+                Matcher m = Pattern.compile("觀看次數：([\\d,]+ 次)").matcher(fullText);
+                if (m.find()) {
+                    playlist.setViews(m.group(1));
+                }
+            }
+
+            // 描述
+            Element descriptionElem = playlistSidebarElem.selectFirst("div.playlist-details > div.playlist-meta > p.playlist-description");
+            if (descriptionElem != null) {
+                playlist.setDescription(descriptionElem.text().trim());
+            }
+
+            Element videoListElem = doc.selectFirst("body > div > div:nth-child(3) > div.nav-bottom-padding.playlist-page-container.page-container-padding > div > div.playlist-video-list");
+            if (videoListElem != null) {
+                // 排序类型
+                Map<String, String> sortMap = parseUserPageSort(videoListElem);
+                playlist.setSort(sortMap);
+
+                // 影片
+                List<VideoInfo> videos = parsePlaylistVideoList(videoListElem);
+                playlist.setVideos(videos);
+            }
+
+            return playlist;
+        }
+        return null;
+    }
+
+    /**
+     * 从播放列表视频区域解析视频信息列表
+     */
+    private static List<VideoInfo> parsePlaylistVideoList(Element videoListElem) {
+        List<VideoInfo> list = new ArrayList<>();
+
+        Elements cards = videoListElem.select(".playlist-video-card.video-item-container");
+        for (Element card : cards) {
+            VideoInfo info = new VideoInfo();
+
+            // 缩略图区域
+            Element thumbContainer = card.selectFirst(".video-thumb-container .thumb-container > a[href]");
+            if (thumbContainer != null) {
+                // 封面图
+                Element imgEl = thumbContainer.selectFirst("img.main-thumb");
+                if (imgEl != null) {
+                    info.setCoverUrl(getAbsUrl(imgEl, "src"));
+                }
+
+                // 时长
+                Element durationEl = thumbContainer.selectFirst("div.duration");
+                if (durationEl != null) {
+                    info.setDuration(durationEl.text().trim());
+                }
+
+                // 统计信息（好评率 + 观看次数）
+                Elements statItems = thumbContainer.select("div.stat-item");
+                for (Element stat : statItems) {
+                    String text = stat.text().trim();
+                    if (text.contains("%")) {
+                        info.setLikeRate(text.replace("thumb_up", "").trim());
+                    } else if (!text.isEmpty() && (text.contains("次") || text.matches(".*\\d.*"))) {
+                        info.setViews(text);
+                    }
+                }
+            }
+
+            // 视频信息区域
+            // 标题 + 视频链接
+            Element titleLinkEl = card.selectFirst("h4.video-title a[href]");
+            if (titleLinkEl != null) {
+                String href = getAbsUrl(titleLinkEl, "href");
+                info.setVideoUrl(href);
+                info.setVideoCode(extractVideoCode(href));
+                info.setTitle(titleLinkEl.text().trim());
+            }
+
+            // 上传者 + 上传时间
+            Element metaLinkEl = card.selectFirst("div.video-meta-data a[href]");
+            if (metaLinkEl != null) {
+                info.setUploaderUrl(getAbsUrl(metaLinkEl, "href"));
+                String metaText = metaLinkEl.text().trim();
+                String[] parts = metaText.split("\\s*•\\s*");
+                if (parts.length >= 1) {
+                    info.setUploader(parts[0].trim());
+                }
+                if (parts.length >= 2) {
+                    info.setUploadTime(parts[1].trim());
+                }
+            }
+
+            list.add(info);
+        }
+        return list;
     }
 }

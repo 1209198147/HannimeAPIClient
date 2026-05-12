@@ -295,6 +295,28 @@ public class HanimeapiClientTest {
     }
 
     @Test
+    public void testGetPlaylist() throws Exception {
+        System.out.println("--- 获取播放列表页面 ---");
+        String listCode = "685024";
+        PlaylistParam listParam = PlaylistParam.builder()
+                .listCode(listCode)
+                .page(1)
+                .build();
+        Playlist playlistsPage = client.getPlaylist(listParam);
+        System.out.println("播放列表名称: " + playlistsPage.getTitle());
+        System.out.println("播放列表描述: " + playlistsPage.getDescription());
+        System.out.println("播放列表封面: " + playlistsPage.getCoverUrl());
+        System.out.println("播放列表视频数量: " + playlistsPage.getTotal());
+        System.out.println("------------ 播放列表视频 ------------");
+        List<VideoInfo> videoList = playlistsPage.getVideos();
+        if (videoList != null) {
+            for (VideoInfo videoInfo : videoList) {
+                System.out.println("  " + videoInfo.getTitle() + " | 代码: " + videoInfo.getVideoCode());
+            }
+        }
+    }
+
+    @Test
     public void testDownloadInfo() throws Exception {
         DownloadInfo downloadInfo = client.getDownloadInfo("405939");
 
