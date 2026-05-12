@@ -1649,6 +1649,11 @@ public class HtmlParser {
                 entity.setHasNextPage(!isDisabled);
             }
 
+            Element currentPageElem = paginationElem.selectFirst("[aria-current='page']");
+            if (currentPageElem != null) {
+                entity.setCurrentPage(Integer.parseInt(currentPageElem.text().trim()));
+            }
+
             // 解析总页数：遍历所有 a.page-link，提取数字文本取最大值
             Elements pageLinks = paginationElem.select("a.page-link");
             int maxPage = 1;

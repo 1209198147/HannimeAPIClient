@@ -17,6 +17,10 @@ public class Pagination {
      */
     private int totalPage = 1;
     /**
+     * 当前页
+     */
+    private int currentPage = 1;
+    /**
      * 是否有上一页
      */
     private boolean hasPrevPage;
