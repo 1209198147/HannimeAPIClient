@@ -35,8 +35,8 @@ public class WatchPage {
     /** 多分辨率视频URL映射: 分辨率 -> VideoQuality */
     private Map<String, VideoQuality> videoUrls;
 
-    /** 标签列表 */
-    private List<String> tags;
+    /** 标签列表 标签名 -> 标签URL */
+    private Map<String, String> tags;
 
     /** 用户播放列表信息 */
     private MyList myList;

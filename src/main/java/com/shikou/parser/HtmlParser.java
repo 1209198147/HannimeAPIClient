@@ -390,19 +390,21 @@ public class HtmlParser {
     /**
      * 解析标签列表
      */
-    private static List<String> parseTags(Document doc) {
-        List<String> tags = new ArrayList<>();
+    private static Map<String, String> parseTags(Document doc) {
+        Map<String, String> tags = new HashMap<>();
         Elements tagEls = doc.select(".single-video-tag");
         List<String> ignoreTags = Arrays.asList("add", "remove");
         for (Element tagEl : tagEls) {
+            Element element = tagEl.selectFirst("a");
+            String href = element.attr("href");
             String tagText = tagEl.text().trim();
             if (ignoreTags.contains(tagText.toLowerCase())) {
                 continue;
             }
             // 去掉尾部数字括号
             tagText = tagText.replaceAll("\\s*\\(\\d+\\)$", "").trim();
-            if (!tagText.isEmpty()) {
-                tags.add(tagText);
+            if (!StringUtils.isAnyBlank(tagText, href)) {
+                tags.put(tagText, href);
             }
         }
         return tags;

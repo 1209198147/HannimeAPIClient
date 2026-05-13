@@ -38,8 +38,8 @@ public class HanimeVideo {
     /** 多分辨率视频URL映射: 分辨率 -> VideoQuality */
     private Map<String, VideoQuality> videoUrls;
 
-    /** 标签列表 */
-    private List<String> tags;
+    /** 标签列表 标签 -> 标签url */
+    private Map<String, String> tags;
 
     /** 作者信息 */
     private Artist artist;
