@@ -19,6 +19,12 @@ public class HomePageSection {
      * 部分标题
      */
     private String title;
+
+    /**
+     * 查看更多链接
+     */
+    private String moreLink;
+
     /**
      * 视频信息列表
      */

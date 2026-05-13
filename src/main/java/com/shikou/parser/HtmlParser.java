@@ -140,8 +140,10 @@ public class HtmlParser {
             }
             if (div.tagName().equals("div")) {
                 String title = Optional.ofNullable(a.selectFirst("h3")).map(Element::ownText).orElse("未知部分" + (i/2 + 1));
+                String moreLink = getAbsUrl(a, "href");
                 HomePageSection homePageSection = HomePageSection.builder()
                         .title(title.trim())
+                        .moreLink(moreLink)
                         .videoInfoList(parseHanimeListByDiv(div))
                         .build();
                 sections.add(homePageSection);
