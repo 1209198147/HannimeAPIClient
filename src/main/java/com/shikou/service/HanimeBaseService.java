@@ -268,7 +268,7 @@ public class HanimeBaseService {
         }
     }
 
-    public List<String> getGenreList() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, String> getGenreList() throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = getSearchUrl();
 
         Request request = new Request.Builder()
@@ -282,7 +282,7 @@ public class HanimeBaseService {
         return HtmlParser.parseGenreList(doc);
     }
 
-    public Map<String, List<String>> getTagsMap() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, Map<String, String>> getTagsMap() throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = getSearchUrl();
 
         Request request = new Request.Builder()
@@ -296,7 +296,7 @@ public class HanimeBaseService {
         return HtmlParser.parseTagsMap(doc);
     }
 
-    public List<String> getSortTypeList() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, String> getSortTypeList() throws HanimeApiException, HanimeNetworkException {
         HttpUrl url = getSearchUrl();
 
         Request request = new Request.Builder()

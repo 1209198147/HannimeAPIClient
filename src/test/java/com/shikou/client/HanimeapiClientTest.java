@@ -57,23 +57,25 @@ public class HanimeapiClientTest {
                 .page(1)
                 .build();
         SearchPage searchPage = client.getSearchPage(searchParams);
-        List<String> genres = searchPage.getGenres();
+        Map<String, String> genres = searchPage.getGenres();
         if (genres != null) {
             System.out.println("genres: " + genres.size());
             if (!genres.isEmpty()) {
-                genres.forEach(genre -> {
-                    System.out.println("\t" + genre);
+                genres.forEach((genre, genreValue) -> {
+                    System.out.println("\t" + genre + " | 值: " + genreValue);
                 });
             }
         }
-        Map<String, List<String>> tagsMap = searchPage.getTagsMap();
+        Map<String, Map<String, String>> tagsMap = searchPage.getTagsMap();
         if (tagsMap != null) {
             System.out.println("tags: " + tagsMap.size());
             if (!tagsMap.isEmpty()) {
                 tagsMap.forEach((key, value) -> {
-                    System.out.println("\t" + key);
+                    System.out.println("\t" + key + " | 值: " + value);
                     if (!value.isEmpty()) {
-                        System.out.println("\t\t" + value);
+                        value.forEach((tag, tagValue) -> {
+                            System.out.println("\t\t" + tag + " | 值: " + tagValue);
+                        });
                     }
                 });
             }
@@ -83,9 +85,9 @@ public class HanimeapiClientTest {
             System.out.println("dates: " + dates.size());
             if (!dates.isEmpty()) {
                 dates.forEach((key, value) -> {
-                    System.out.println("\t" + key);
+                    System.out.println("\t" + key + " | 值: " + value);
                     if (!value.isEmpty()) {
-                        System.out.println("\t\t" + value);
+                        System.out.println("\t\t" + value + " | 值: " + value);
                     }
                 });
             }
@@ -95,9 +97,9 @@ public class HanimeapiClientTest {
             System.out.println("durations: " + durations.size());
             if (!durations.isEmpty()) {
                 durations.forEach((key, value) -> {
-                    System.out.println("\t" + key);
+                    System.out.println("\t" + key + " | 值: " + value);
                     if (!value.isEmpty()) {
-                        System.out.println("\t\t" + value);
+                        System.out.println("\t\t" + value + " | 值: " + value);
                     }
                 });
             }
@@ -364,31 +366,31 @@ public class HanimeapiClientTest {
 
     @Test
     public void testGetGenreList() throws Exception {
-        List<String> genreList = client.getGenreList();
+        Map<String, String> genreList = client.getGenreList();
         System.out.println("类型大小: " + genreList.size());
-        for (String genre : genreList) {
-            System.out.println("类型：" + genre);
+        for (Map.Entry<String, String> genre : genreList.entrySet()) {
+            System.out.println("类型：" + genre.getKey() + " | 值: " + genre.getValue());
         }
     }
 
     @Test
     public void testGetTagsMap() throws Exception {
-        Map<String, List<String>> tagsMap = client.getTagsMap();
+        Map<String, Map<String, String>> tagsMap = client.getTagsMap();
         System.out.println("类型大小: " + tagsMap.size());
-        for (Map.Entry<String, List<String>> tag : tagsMap.entrySet()) {
+        for (Map.Entry<String, Map<String, String>> tag : tagsMap.entrySet()) {
             System.out.println("类型：" + tag.getKey());
-            for (String tagValue : tag.getValue()) {
-                System.out.println("\t" + tagValue);
+            for (Map.Entry<String, String> tagValue : tag.getValue().entrySet()) {
+                System.out.println("\t" + tagValue.getKey() + " | 值: " + tagValue.getValue());
             }
         }
     }
 
     @Test
     public void testGetSortTypeList() throws Exception {
-        List<String> sortTypeList = client.getSortTypeList();
+        Map<String, String> sortTypeList = client.getSortTypeList();
         System.out.println("类型大小: " + sortTypeList.size());
-        for (String sort : sortTypeList) {
-            System.out.println("类型：" + sort);
+        for (Map.Entry<String, String> sort : sortTypeList.entrySet()) {
+            System.out.println("类型：" + sort.getKey() + " | 值: " + sort.getValue());
         }
     }
 

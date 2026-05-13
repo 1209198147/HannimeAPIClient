@@ -5,6 +5,7 @@ import com.shikou.model.entities.pages.*;
 import com.shikou.model.entities.results.PlaylistsResult;
 import com.shikou.model.entities.results.VideosResult;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -1024,53 +1025,58 @@ public class HtmlParser {
         return info;
     }
 
-    public static List<String> parseGenreList(Document doc) {
-        return parseModalOptions(doc, "#genre-modal");
+    public static Map<String, String> parseGenreList(Document doc) {
+        return parseGenreModalOptions(doc, "#genre-modal");
     }
 
-    public static Map<String, List<String>> parseTagsMap(Document doc) {
-        Map<String, List<String>> tagsMap = new HashMap<>();
+    public static Map<String, Map<String, String>> parseTagsMap(Document doc) {
+        Map<String, Map<String, String>> tagsMap = new HashMap<>();
         Element tagModalElem = doc.selectFirst("#tags > div > div > div.modal-body");
         if (tagModalElem != null) {
             Elements children = tagModalElem.children();
             String currentType = null;
-            List<String> tags = new ArrayList<>();
+            Map<String, String> tagMap = new HashMap<>();
             for (Element child : children) {
                 if (child.is("div")) {
                     continue;
                 }
                 if (child.is("h5")) {
                     if(currentType != null) {
-                        tagsMap.put(currentType, tags);
+                        tagsMap.put(currentType, tagMap);
                     }
                     currentType = child.text().trim();
-                    tags = new ArrayList<>();
+                    tagMap = new HashMap<>();
                 }
                 if (child.is("label")) {
-                    tags.add(child.text().trim());
+                    String key = child.text().trim();
+                    Element inputEl = child.selectFirst("input");
+                    if (inputEl != null) {
+                        String value = inputEl.attr("value");
+                        tagMap.put(key, value);
+                    }
                 }
             }
-            if(currentType != null) {
-                tagsMap.put(currentType, tags);
+            if(currentType != null && MapUtils.isNotEmpty(tagMap)) {
+                tagsMap.put(currentType, tagMap);
             }
         }
         return tagsMap;
     }
 
-    public static List<String> parseSortTypeList(Document doc) {
-        return parseModalOptions(doc, "#sort-modal");
+    public static Map<String, String> parseSortTypeList(Document doc) {
+        return parseSortModalOptions(doc, "#sort-modal");
     }
 
     public static SearchPage parseSearchPage(Document doc) {
         SearchPage searchPage = new SearchPage();
-        List<String> genres = parseGenreList(doc);
+        Map<String, String> genres = parseGenreList(doc);
         searchPage.setGenres(genres);
 
-        Map<String, List<String>> tagsMap = parseTagsMap(doc);
+        Map<String, Map<String, String>> tagsMap = parseTagsMap(doc);
         searchPage.setTagsMap(tagsMap);
 
-        List<String> strings = parseSortTypeList(doc);
-        searchPage.setSortTypes(strings);
+        Map<String, String> sortMap = parseSortTypeList(doc);
+        searchPage.setSortTypes(sortMap);
 
         List<VideoInfo> videoInfos = parseVideoCards(doc);
         searchPage.setVideos(videoInfos);
@@ -1346,19 +1352,35 @@ public class HtmlParser {
     }
 
     /**
+     * 解析排序方式Modal弹窗中的选项列表
+     */
+    private static Map<String, String> parseSortModalOptions(Document doc, String modalSelector) {
+        return parseModalOptions(doc, modalSelector, ".hentai-sort-options-wrapper");
+    }
+
+    /**
+     * 解析排序方式Modal弹窗中的选项列表
+     */
+    private static Map<String, String> parseGenreModalOptions(Document doc, String modalSelector) {
+        return parseModalOptions(doc, modalSelector, ".genre-option");
+    }
+
+    /**
      * 解析Modal弹窗中的选项列表（如类型、排序方式）
      */
-    private static List<String> parseModalOptions(Document doc, String modalSelector) {
-        List<String> options = new ArrayList<>();
+    private static Map<String, String> parseModalOptions(Document doc, String modalSelector, String cssQuery) {
+        Map<String, String> options = new HashMap<>();
         Element modalElem = doc.selectFirst(modalSelector + " > div > div > div.modal-body");
         if (modalElem != null) {
-            Elements elems = modalElem.select(".hentai-sort-options");
+            Elements elems = modalElem.select(cssQuery);
             for (Element elem : elems) {
                 if (elem != null) {
-                    String value = elem.text().trim();
-                    if (StringUtils.isNotBlank(value)) {
-                        options.add(value);
+                    String key = elem.text().trim();
+                    String value = elem.attr("data-value").trim();
+                    if (StringUtils.isAnyBlank(key, value)) {
+                        continue;
                     }
+                    options.put(key, value);
                 }
             }
         }

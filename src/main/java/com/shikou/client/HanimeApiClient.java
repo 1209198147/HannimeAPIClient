@@ -189,15 +189,15 @@ public class HanimeApiClient {
         return baseService.getUserPlaylistsPage(param);
     }
 
-    public List<String> getGenreList() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, String> getGenreList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getGenreList();
     }
 
-    public Map<String, List<String>> getTagsMap() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, Map<String, String>> getTagsMap() throws HanimeApiException, HanimeNetworkException {
         return baseService.getTagsMap();
     }
 
-    public List<String> getSortTypeList() throws HanimeApiException, HanimeNetworkException {
+    public Map<String, String> getSortTypeList() throws HanimeApiException, HanimeNetworkException {
         return baseService.getSortTypeList();
     }
 

@@ -18,9 +18,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchPage extends Pagination {
-    List<String> genres;
-    Map<String, List<String>> tagsMap;
-    List<String> sortTypes;
+    Map<String, String> genres;
+    Map<String, Map<String, String>> tagsMap;
+    Map<String, String> sortTypes;
     Map<String, String> dates = Map.of(
             "全部", "",
             "过去 24 小时", "過去+24+小時",
