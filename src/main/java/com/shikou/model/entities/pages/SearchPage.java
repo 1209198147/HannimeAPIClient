@@ -28,8 +28,7 @@ public class SearchPage extends Pagination {
             "过去 1 周", "過去+1+週",
             "过去 1 个月", "過去+1+個月",
             "过去 3 个月", "過去+3+個月",
-            "过去 1 年", "過去+1+年",
-            "其他", "%s+年+%s+月"
+            "过去 1 年", "過去+1+年"
     );
     Map<String, String> durations = Map.of(
             "全部", "",
