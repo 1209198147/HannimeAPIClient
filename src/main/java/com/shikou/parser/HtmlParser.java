@@ -998,13 +998,23 @@ public class HtmlParser {
         // 视频链接 → videoUrl / videoCode
         Element linkEl = card.selectFirst("a[href*=/watch]");
         if (linkEl == null) {
-            // .video-card-inner 外层可能被 <a> 包裹
+            // .video-card-inner 外层可能被 <a> 和 <div> 包裹
             linkEl = card.parent();
+            Element element = linkEl.selectFirst("a[href*=/watch]");
+            if(element == null){
+                linkEl = linkEl.parent();
+            }else{
+                linkEl = element;
+            }
         }
         if (linkEl != null) {
             String href = getAbsUrl(linkEl, "href");
             info.setVideoUrl(href);
-            info.setVideoCode(extractVideoCode(href));
+            String videoCode = extractVideoCode(href);
+            if(StringUtils.isBlank(videoCode)){
+                return null;
+            }
+            info.setVideoCode(videoCode);
         }
 
         // 封面图
