@@ -1458,7 +1458,7 @@ public class HtmlParser {
     }
 
     private static Map<String, String> parseUserPageSort(Element doc) {
-        Element sortGroupElem = doc.selectFirst("#home-rows-wrapper > div.tab-content-container > div > div.filter-button-group");
+        Element sortGroupElem = doc.selectFirst("div.filter-button-group");
         if (sortGroupElem != null){
             Elements children = sortGroupElem.children();
             if(CollectionUtils.isNotEmpty(children)){
