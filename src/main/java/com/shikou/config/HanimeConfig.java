@@ -1,6 +1,7 @@
 package com.shikou.config;
 
 import java.io.File;
+import java.net.Proxy;
 
 import lombok.Builder;
 import lombok.Data;
@@ -91,6 +92,24 @@ public class HanimeConfig {
     /** 写入超时（秒） */
     @Builder.Default
     private final int writeTimeout = DEFAULT_WRITE_TIMEOUT;
+
+    /** 是否使用内置DNS */
+    @Builder.Default
+    private final boolean useBuiltInDNS = false;
+
+    /** 是否使用代理 */
+    @Builder.Default
+    private final boolean useProxy = false;
+
+    /** 代理类型 */
+    @Builder.Default
+    private final Proxy.Type proxyType = Proxy.Type.HTTP;
+    /** 代理主机 */
+    @Builder.Default
+    private final String proxyHost = null;
+    /** 代理端口 */
+    @Builder.Default
+    private final int proxyPort = 0;
 
     /**
      * 创建默认配置

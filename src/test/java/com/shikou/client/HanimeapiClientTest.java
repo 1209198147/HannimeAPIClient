@@ -21,8 +21,14 @@ public class HanimeapiClientTest {
     public void setUp() {
         // 也可以使用自定义配置
         if ("HK".equalsIgnoreCase(MODE)) {
+            HanimeConfig config = HanimeConfig.builder()
+                    .baseUrl(HanimeConfig.DEFAULT_BASE_URL_HK)
+                    .useProxy(true)
+                    .proxyHost("127.0.0.1")
+                    .proxyPort(7890)
+                    .build();
             client = HanimeApiClient.builder()
-                    .config(HanimeConfig.defaultConfigHK())
+                    .config(config)
                     .build();
         }else{
             client = HanimeApiClient.builder()
