@@ -96,9 +96,6 @@ public class VideoDownloader {
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("Range", "bytes=" + downloadedBytes + "-")
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         // 5. 执行请求并处理响应
@@ -163,9 +160,6 @@ public class VideoDownloader {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -195,9 +189,6 @@ public class VideoDownloader {
         Request headRequest = new Request.Builder()
                 .url(url)
                 .head()
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response headResponse = client.newCall(headRequest).execute()) {

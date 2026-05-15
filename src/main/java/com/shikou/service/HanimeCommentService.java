@@ -43,8 +43,6 @@ public class HanimeCommentService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         String json = HanimeHttpExecutor.executeForString(client, request, "获取评论失败");
@@ -80,8 +78,6 @@ public class HanimeCommentService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         String json = HanimeHttpExecutor.executeForString(client, request, "获取回复失败");
@@ -116,9 +112,7 @@ public class HanimeCommentService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "createComment")
                 .post(formBody)
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -143,9 +137,7 @@ public class HanimeCommentService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "replyComment")
                 .post(formBody)
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -182,9 +174,7 @@ public class HanimeCommentService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "commentLike")
                 .post(formBuilder.build())
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {

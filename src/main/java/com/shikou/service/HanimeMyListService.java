@@ -41,8 +41,6 @@ public class HanimeMyListService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表失败");
@@ -67,8 +65,6 @@ public class HanimeMyListService {
     public List<PlaylistItem> getAllPlaylists() throws HanimeApiException, HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "playlists")
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表失败");
@@ -88,9 +84,7 @@ public class HanimeMyListService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "deletePlayitem")
                 .post(formBody)
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -116,9 +110,7 @@ public class HanimeMyListService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "like")
                 .post(formBuilder.build())
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -149,9 +141,7 @@ public class HanimeMyListService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "createPlaylist")
                 .post(formBody)
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -185,9 +175,7 @@ public class HanimeMyListService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "save")
                 .post(formBuilder.build())
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -214,9 +202,7 @@ public class HanimeMyListService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "playlist/" + listCode)
                 .post(formBuilder.build())
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {

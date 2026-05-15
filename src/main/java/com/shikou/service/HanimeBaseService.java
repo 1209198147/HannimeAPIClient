@@ -41,8 +41,6 @@ public class HanimeBaseService {
     public HomePage getHomePage() throws HanimeApiException, HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl())
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取首页失败");
@@ -62,8 +60,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "搜索失败");
@@ -129,9 +125,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取影片详情失败");
@@ -151,9 +144,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取下载页面失败");
@@ -178,8 +168,6 @@ public class HanimeBaseService {
     public PreviewPage getPreviews(String date) throws HanimeApiException, HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "previews/" + date)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取预览页面失败");
@@ -196,8 +184,6 @@ public class HanimeBaseService {
     public String getCsrfToken() throws HanimeApiException, HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -234,9 +220,7 @@ public class HanimeBaseService {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
                 .post(formBody)
-                .addHeader("User-Agent", config.getUserAgent())
                 .addHeader("X-CSRF-TOKEN", csrfToken)
-                .addHeader("Referer", config.getBaseUrl() + "login")
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -257,8 +241,6 @@ public class HanimeBaseService {
     public boolean verifyLogin() throws HanimeNetworkException {
         Request request = new Request.Builder()
                 .url(config.getBaseUrl() + "login")
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -273,8 +255,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取类型列表失败");
@@ -287,8 +267,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取标签列表失败");
@@ -301,8 +279,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取排序方式列表失败");
@@ -315,8 +291,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取搜索页面失败");
@@ -329,9 +303,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取影片详情失败");
@@ -383,9 +354,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
@@ -398,9 +366,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取用户上传视频页失败");
@@ -413,9 +378,6 @@ public class HanimeBaseService {
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取用户上传视频页失败");
@@ -427,9 +389,6 @@ public class HanimeBaseService {
         HttpUrl url = getUserUrl(userId);
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取用户详情失败");
@@ -441,9 +400,6 @@ public class HanimeBaseService {
         HttpUrl url = getUserUploadedUrl(param);
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "上传视频列表详情失败");
@@ -455,9 +411,6 @@ public class HanimeBaseService {
         HttpUrl url = getUserPlaylistsUrl(param);
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
 
         String html = HanimeHttpExecutor.executeForString(client, request, "获取" + param.getCode() + "获取用户播放列表详情失败");
@@ -469,9 +422,6 @@ public class HanimeBaseService {
         HttpUrl url = getPlaylistUrl(param);
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", config.getUserAgent())
-                .addHeader("Referer", config.getBaseUrl())
-                .addHeader("Cookie", "user_lang=" + config.getUserLang())
                 .build();
         String html = HanimeHttpExecutor.executeForString(client, request, "获取播放列表页失败");
         var doc = org.jsoup.Jsoup.parse(html, config.getBaseUrl());

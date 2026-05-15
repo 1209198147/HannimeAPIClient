@@ -1,5 +1,7 @@
 package com.shikou.config;
 
+import java.io.File;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -22,13 +24,22 @@ public class HanimeConfig {
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     /** 默认连接超时（秒） */
-    public static final int DEFAULT_CONNECT_TIMEOUT = 60;
+    public static final int DEFAULT_CONNECT_TIMEOUT = 15;
 
     /** 默认读取超时（秒） */
-    public static final int DEFAULT_READ_TIMEOUT = 60;
+    public static final int DEFAULT_READ_TIMEOUT = 30;
 
     /** 默认写入超时（秒） */
-    public static final int DEFAULT_WRITE_TIMEOUT = 60;
+    public static final int DEFAULT_WRITE_TIMEOUT = 15;
+
+    /** 默认缓存大小（100MB） */
+    public static final long DEFAULT_CACHE_SIZE = 100 * 1024 * 1024;
+
+    /** 默认最大空闲连接数 */
+    public static final int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
+
+    /** 默认连接保活时间（分钟） */
+    public static final int DEFAULT_KEEP_ALIVE_MINUTES = 10;
 
     /** 下载连接超时（秒） */
     public static final int DOWNLOAD_CONNECT_TIMEOUT = 120;
@@ -44,6 +55,22 @@ public class HanimeConfig {
 
     /** 下载分段大小（10MB） */
     public static final int DOWNLOAD_CHUNK_SIZE = 10 * 1024 * 1024;
+
+    /** 缓存目录（null 表示不启用缓存） */
+    @Builder.Default
+    private final String cacheDir = getDefaultCacheDir();
+
+    /** 缓存大小（字节） */
+    @Builder.Default
+    private final long cacheSize = DEFAULT_CACHE_SIZE;
+
+    /** 最大空闲连接数 */
+    @Builder.Default
+    private final int maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
+
+    /** 连接保活时间（分钟） */
+    @Builder.Default
+    private final int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;
 
     /** 自定义Base URL */
     @Builder.Default
@@ -86,4 +113,15 @@ public class HanimeConfig {
      */
     @Builder.Default
     private final String userLang = "zhs";
+
+    /**
+     * 获取默认缓存目录
+     */
+    private static String getDefaultCacheDir() {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        if (tmpDir == null) {
+            return null;
+        }
+        return tmpDir + File.separator + "hanime_api_cache";
+    }
 }

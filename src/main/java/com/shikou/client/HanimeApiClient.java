@@ -10,10 +10,14 @@ import com.shikou.model.entities.pages.*;
 import com.shikou.model.entities.results.PlaylistsResult;
 import com.shikou.model.entities.results.VideosResult;
 import com.shikou.service.*;
+import okhttp3.Cache;
+import okhttp3.ConnectionPool;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -428,13 +432,55 @@ public class HanimeApiClient {
     // ======================== 静态工厂方法 ========================
 
     private static OkHttpClient buildHttpClient(HanimeConfig config) {
-        return new OkHttpClient.Builder()
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getConnectTimeout(), TimeUnit.SECONDS)
                 .readTimeout(config.getReadTimeout(), TimeUnit.SECONDS)
                 .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS)
                 .followRedirects(true)
                 .followSslRedirects(true)
-                .build();
+                // 连接池调优：更多空闲连接 + 更长保活时间
+                .connectionPool(new ConnectionPool(
+                        config.getMaxIdleConnections(),
+                        config.getKeepAliveMinutes(),
+                        TimeUnit.MINUTES))
+                // 统一添加默认请求头（User-Agent、Cookie、Referer）
+                .addInterceptor(createDefaultHeadersInterceptor(config));
+
+        // 启用 HTTP 缓存（如果配置了缓存目录）
+        if (config.getCacheDir() != null && config.getCacheSize() > 0) {
+            File cacheDir = new File(config.getCacheDir());
+            if (!cacheDir.exists()) {
+                cacheDir.mkdirs();
+            }
+            builder.cache(new Cache(cacheDir, config.getCacheSize()));
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * 创建默认请求头拦截器
+     * <p>自动为所有请求添加 User-Agent、Cookie(user_lang) 和 Referer</p>
+     */
+    @NotNull
+    private static Interceptor createDefaultHeadersInterceptor(HanimeConfig config) {
+        return chain -> {
+            okhttp3.Request original = chain.request();
+            okhttp3.Request.Builder requestBuilder = original.newBuilder();
+
+            // 只在没有显式设置时添加默认头
+            if (original.header("User-Agent") == null) {
+                requestBuilder.addHeader("User-Agent", config.getUserAgent());
+            }
+            if (original.header("Cookie") == null) {
+                requestBuilder.addHeader("Cookie", "user_lang=" + config.getUserLang());
+            }
+            if (original.header("Referer") == null) {
+                requestBuilder.addHeader("Referer", config.getBaseUrl());
+            }
+
+            return chain.proceed(requestBuilder.build());
+        };
     }
 
     public static Builder builder() {
